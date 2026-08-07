@@ -1,5 +1,6 @@
 ---
-source: crates/vize_atelier_vapor/src/lib.rs
+source: crates/vize_atelier_vapor/src/tests.rs
+assertion_line: 320
 expression: code.as_str()
 ---
 import { child as _child, setInsertionState as _setInsertionState, createIf as _createIf, template as _template } from 'vue';
@@ -8,7 +9,7 @@ const t1 = _template("<div><button></button></div>", true)
 export function render(_ctx) {
 const n1 = t1()
 const n0 = _child(n1)
-_setInsertionState(n0, null, true)
+_setInsertionState(n0)
 const n2 = _createIf(() => (_ctx.ok), () => {
 const n4 = t0()
 return n4

@@ -162,6 +162,16 @@ fn build_next_chain(
         base
     } else {
         ctx.use_helper("next");
-        cstr!("_next({}, {})", base, index)
+        // `next(node, logicalIndex)` consults the index only while hydrating;
+        // on the client it advances exactly one sibling. Emitting a single
+        // call therefore walked one node for any offset, landing short —
+        // usually on a whitespace text node. Emit one call per step so the
+        // client walk is right; the index is still passed on the first hop so
+        // hydration keeps its logical anchor.
+        let mut expr = cstr!("_next({}, {})", base, index);
+        for _ in 1..offset {
+            expr = cstr!("_next({})", expr);
+        }
+        expr
     }
 }

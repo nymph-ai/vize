@@ -15,6 +15,8 @@ use tower_lsp::lsp_types::{
 #[cfg(feature = "native")]
 use vize_canon::{CorsaBridge, LspCompletionItem, LspDocumentation};
 
+#[cfg(feature = "native")]
+use super::service_corsa_template;
 use super::{is_inside_html_comment, script, service_inline_art, style, template};
 #[cfg(feature = "native")]
 use crate::ide::corsa_support;
@@ -164,7 +166,7 @@ impl super::CompletionService {
         // Try Corsa completion first.
         if let Some(bridge) = corsa_bridge {
             let corsa_items = match block_type {
-                BlockType::Template => Self::complete_template_with_corsa(ctx, &bridge).await,
+                BlockType::Template => service_corsa_template::complete(ctx, &bridge).await,
                 BlockType::Script => Self::complete_script_with_corsa(ctx, false, &bridge).await,
                 BlockType::ScriptSetup => {
                     Self::complete_script_with_corsa(ctx, true, &bridge).await
@@ -176,6 +178,13 @@ impl super::CompletionService {
             if !corsa_items.is_empty() {
                 let mut items = corsa_items;
                 items.extend(match block_type {
+                    // Inside a template expression the checker's answer is
+                    // the whole story; markup completions are noise (#3911).
+                    BlockType::Template
+                        if crate::ide::is_in_vue_template_expression(&ctx.content, ctx.offset) =>
+                    {
+                        vec![]
+                    }
                     BlockType::Template => template::corsa_template_completions(ctx),
                     BlockType::Script => script::composition_api_completions(),
                     BlockType::ScriptSetup => {
@@ -218,40 +227,6 @@ impl super::CompletionService {
             if bridge.is_initialized() {
                 let request_path =
                     corsa_support::art_template_request_path(ctx.uri, info.variant_index);
-                let Ok(uri) = bridge
-                    .open_or_update_virtual_document(&request_path, &tmpl.content)
-                    .await
-                else {
-                    return vec![];
-                };
-
-                if let Ok(items) = bridge.completion(&uri, line, character).await {
-                    return items
-                        .into_iter()
-                        .map(Self::convert_lsp_completion)
-                        .collect();
-                }
-            }
-        }
-
-        vec![]
-    }
-
-    /// Get completions for template with Corsa.
-    #[cfg(feature = "native")]
-    async fn complete_template_with_corsa(
-        ctx: &IdeContext<'_>,
-        bridge: &CorsaBridge,
-    ) -> Vec<CompletionItem> {
-        if let Some(ref virtual_docs) = ctx.virtual_docs
-            && let Some(ref tmpl) = virtual_docs.template
-            && let Some(vts_offset) =
-                crate::ide::hover::HoverService::sfc_to_virtual_ts_offset(ctx, ctx.offset)
-        {
-            let (line, character) = crate::ide::offset_to_position(&tmpl.content, vts_offset);
-
-            if bridge.is_initialized() {
-                let request_path = corsa_support::template_request_path(ctx.uri);
                 let Ok(uri) = bridge
                     .open_or_update_virtual_document(&request_path, &tmpl.content)
                     .await

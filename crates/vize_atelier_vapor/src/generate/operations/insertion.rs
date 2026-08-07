@@ -1,5 +1,5 @@
 use crate::ir::{BlockIRNode, OperationNode};
-use vize_carton::{String, cstr};
+use vize_carton::cstr;
 
 use super::super::context::GenerateContext;
 
@@ -12,14 +12,15 @@ pub(super) fn emit_insertion_state(
         return;
     };
     ctx.use_helper("setInsertionState");
-    let anchor_expr = anchor
-        .map(|anchor_id| cstr!("n{}", anchor_id))
-        .unwrap_or_else(|| String::from("null"));
-    ctx.push_line(&cstr!(
-        "_setInsertionState(n{}, {}, true)",
-        parent_id,
-        anchor_expr
-    ));
+    // Signature is (parent, anchor?). `null` means "no anchor" — the runtime
+    // then appends — and the third argument is read as a logical index, not a
+    // flag. Emit the two real forms.
+    match anchor {
+        Some(anchor_id) => {
+            ctx.push_line(&cstr!("_setInsertionState(n{}, n{})", parent_id, anchor_id))
+        }
+        None => ctx.push_line(&cstr!("_setInsertionState(n{})", parent_id)),
+    }
 }
 
 pub(super) fn block_requires_parent_insertion_state(block: &BlockIRNode<'_>) -> bool {

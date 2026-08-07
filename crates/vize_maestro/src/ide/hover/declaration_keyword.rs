@@ -16,7 +16,9 @@
 )]
 
 use oxc_allocator::Allocator;
-use oxc_ast::ast::{BindingPattern, Declaration, Statement, VariableDeclarationKind};
+use oxc_ast::ast::{
+    BindingPattern, Declaration, ImportDeclarationSpecifier, Statement, VariableDeclarationKind,
+};
 use oxc_parser::Parser;
 use oxc_span::SourceType;
 use tower_lsp::lsp_types::{Hover, HoverContents};
@@ -46,6 +48,17 @@ pub(super) fn align_hover(ctx: &IdeContext<'_>, word: &str, hover: &mut Hover) {
             markup.value = aligned;
             return;
         }
+        // A component tag resolves to the generated component const, so the
+        // quick info leaks `__vize_component__` and its constructor types.
+        // For an imported SFC the authored fact is the import; present it the
+        // way Volar does (#3912). Anything not imported keeps the checker's
+        // answer until its own shape is measured.
+        if markup.value.contains("__vize_component__")
+            && let Some(aligned) = imported_component_quick_info(&script_setup.content, lang, word)
+        {
+            markup.value = aligned;
+            return;
+        }
     }
     if let Some(template) = descriptor.template.as_ref()
         && ctx.offset >= template.loc.start
@@ -55,6 +68,43 @@ pub(super) fn align_hover(ctx: &IdeContext<'_>, word: &str, hover: &mut Hover) {
     {
         markup.value = aligned;
     }
+}
+
+/// The Volar-shaped quick info for a component imported in `<script setup>`:
+/// ` ```typescript\nimport {word}\n``` `, produced only when an import
+/// declaration actually binds `word` (default, named, aliased, or namespace).
+fn imported_component_quick_info(
+    script_setup: &str,
+    lang: Option<&str>,
+    word: &str,
+) -> Option<String> {
+    if word.is_empty() {
+        return None;
+    }
+    let allocator = Allocator::default();
+    let parsed = Parser::new(&allocator, script_setup, script_source_type(lang)).parse();
+    let binds_word = parsed.program.body.iter().any(|statement| {
+        let Statement::ImportDeclaration(import) = statement else {
+            return false;
+        };
+        // `import type { Child }` binds a type, not a runtime component, so it
+        // never backs a component tag: keep the checker's answer.
+        if import.import_kind.is_type() {
+            return false;
+        }
+        import.specifiers.as_ref().is_some_and(|specifiers| {
+            specifiers.iter().any(|specifier| {
+                // Same for a specifier-level `{ type Child }`.
+                if let ImportDeclarationSpecifier::ImportSpecifier(named) = specifier
+                    && named.import_kind.is_type()
+                {
+                    return false;
+                }
+                specifier.local().name == word
+            })
+        })
+    });
+    binds_word.then(|| format!("```typescript\nimport {word}\n```"))
 }
 
 /// Rewrite a quick-info block opening with `(parameter) {word}` to

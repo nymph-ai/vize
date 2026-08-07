@@ -29,8 +29,8 @@ use self::{
 use super::{
     context::TransformContext,
     control::{
-        transform_for_node, transform_for_node_deferred_parent, transform_for_node_into_parent,
-        transform_if_node, transform_if_node_deferred_parent, transform_if_node_into_parent,
+        transform_for_node, transform_for_node_deferred_parent, transform_for_node_into_parent_with_anchor,
+        transform_if_node, transform_if_node_deferred_parent, transform_if_node_into_parent_with_anchor,
     },
     directive::transform_directive,
     text::{transform_interpolation, transform_text, transform_text_children},
