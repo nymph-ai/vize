@@ -126,7 +126,8 @@ fn transform_element_with_deferred_control_flow_parent<'a>(
         transform_text_children(ctx, &el.children, element_id, block);
     }
 
-    append_deferred_control_flow_children(block, deferred_children, element_id);
+    let anchors = collect_control_flow_anchors(ctx, el, element_id, block);
+    append_deferred_control_flow_children(block, deferred_children, element_id, &anchors);
 
     ctx.add_template(element_id, template);
     block.returns.push(element_id);
@@ -411,13 +412,51 @@ fn transform_deferred_parent_control_flow_children<'a>(
     }
 }
 
+/// Anchors for the element's control-flow children, in source order.
+///
+/// The deferred path lowers children before the parent id exists, so anchors
+/// cannot be computed during lowering the way the direct path does them.
+fn collect_control_flow_anchors<'a>(
+    ctx: &mut TransformContext<'a>,
+    el: &ElementNode<'a>,
+    element_id: usize,
+    block: &mut BlockIRNode<'a>,
+) -> std::vec::Vec<Option<usize>> {
+    let mut anchors = std::vec::Vec::new();
+    for (index, child) in el.children.iter().enumerate() {
+        if matches!(
+            child,
+            TemplateChildNode::If(_) | TemplateChildNode::For(_)
+        ) {
+            anchors.push(anchor_for_control_flow(ctx, el, index, element_id, block));
+        }
+    }
+    anchors
+}
+
 fn append_deferred_control_flow_children<'a>(
     block: &mut BlockIRNode<'a>,
     deferred_children: BlockIRNode<'a>,
     parent_id: usize,
+    anchors: &[Option<usize>],
 ) {
+    let mut seen = 0usize;
     for mut operation in deferred_children.operation {
+        let is_control_flow = matches!(
+            operation,
+            OperationNode::If(_) | OperationNode::For(_)
+        );
         set_direct_control_flow_parent(&mut operation, parent_id);
+        if is_control_flow {
+            if let Some(anchor) = anchors.get(seen).copied().flatten() {
+                match &mut operation {
+                    OperationNode::If(if_node) => if_node.anchor = Some(anchor),
+                    OperationNode::For(for_node) => for_node.anchor = Some(anchor),
+                    _ => {}
+                }
+            }
+            seen += 1;
+        }
         block.operation.push(operation);
     }
     for effect in deferred_children.effect {
