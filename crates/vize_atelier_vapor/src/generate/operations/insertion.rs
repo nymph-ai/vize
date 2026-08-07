@@ -1,5 +1,5 @@
 use crate::ir::{BlockIRNode, OperationNode};
-use vize_carton::{String, cstr};
+use vize_carton::cstr;
 
 use super::super::context::GenerateContext;
 
@@ -12,14 +12,19 @@ pub(super) fn emit_insertion_state(
         return;
     };
     ctx.use_helper("setInsertionState");
-    let anchor_expr = anchor
-        .map(|anchor_id| cstr!("n{}", anchor_id))
-        .unwrap_or_else(|| String::from("null"));
-    ctx.push_line(&cstr!(
-        "_setInsertionState(n{}, {}, true)",
-        parent_id,
-        anchor_expr
-    ));
+    // The runtime signature is (parent, anchor?). With an anchor the block is
+    // inserted before that node; without one it is appended. The previous
+    // `null, true` passed "no anchor" plus a third argument the runtime reads
+    // as a logical index, so a block that should precede later static siblings
+    // was appended after them.
+    match anchor {
+        Some(anchor_id) => ctx.push_line(&cstr!(
+            "_setInsertionState(n{}, n{})",
+            parent_id,
+            anchor_id
+        )),
+        None => ctx.push_line(&cstr!("_setInsertionState(n{})", parent_id)),
+    }
 }
 
 pub(super) fn block_requires_parent_insertion_state(block: &BlockIRNode<'_>) -> bool {

@@ -94,9 +94,13 @@ pub(super) fn generate_next_ref(ctx: &mut GenerateContext, next_ref: &NextRefIRN
 }
 
 fn build_next_chain(base: String, offset: usize) -> String {
-    if offset == 0 {
-        base
-    } else {
-        cstr!("_next({}, {})", base, offset)
+    // `next(node)` advances exactly one sibling; it takes no count. Emitting
+    // `_next(base, n)` passed the count into a parameter the runtime ignores
+    // (a hydration-only logical index), so the walk stopped one node along and
+    // typically landed on a whitespace text node.
+    let mut expr = base;
+    for _ in 0..offset {
+        expr = cstr!("_next({})", expr);
     }
+    expr
 }

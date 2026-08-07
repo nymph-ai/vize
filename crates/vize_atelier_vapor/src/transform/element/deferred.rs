@@ -11,8 +11,9 @@ use super::{
     BlockIRNode, ChildRefIRNode, ElementNode, ElementType, NextRefIRNode, OperationNode, PropNode,
     SlotOutletIRNode, String, TemplateChildNode, TransformContext, get_slot_outlet_name,
     get_slot_outlet_props, transform_children, transform_directive,
-    transform_for_node_deferred_parent, transform_for_node_into_parent,
-    transform_if_node_deferred_parent, transform_if_node_into_parent, transform_text_children,
+    transform_for_node_deferred_parent, transform_for_node_into_parent_with_anchor,
+    transform_if_node_deferred_parent, transform_if_node_into_parent_with_anchor,
+    transform_text_children,
 };
 
 /// Transform an element that has control flow children (`v-if`/`v-for`).
@@ -338,17 +339,58 @@ fn transform_existing_element_control_flow_children<'a>(
     element_id: usize,
     block: &mut BlockIRNode<'a>,
 ) {
-    for child in el.children.iter() {
+    for (index, child) in el.children.iter().enumerate() {
         match child {
             TemplateChildNode::If(if_node) => {
-                transform_if_node_into_parent(ctx, if_node, block, element_id);
+                let anchor = anchor_for_control_flow(ctx, el, index, element_id, block);
+                transform_if_node_into_parent_with_anchor(ctx, if_node, block, element_id, anchor);
             }
             TemplateChildNode::For(for_node) => {
-                transform_for_node_into_parent(ctx, for_node, block, element_id);
+                let anchor = anchor_for_control_flow(ctx, el, index, element_id, block);
+                transform_for_node_into_parent_with_anchor(ctx, for_node, block, element_id, anchor);
             }
             _ => {}
         }
     }
+}
+
+/// Anchor a control-flow block before whatever static content follows it.
+///
+/// A `v-if`/`v-for` block is inserted at runtime while its static siblings are
+/// baked into the parent template. With no anchor the runtime appends, so a
+/// block followed by static siblings renders *after* them — the children come
+/// out in the wrong order. Returns a `ChildRef` to the first following rendered
+/// node, or `None` when the block is last and appending is already correct.
+fn anchor_for_control_flow<'a>(
+    ctx: &mut TransformContext<'a>,
+    el: &ElementNode<'a>,
+    index: usize,
+    element_id: usize,
+    block: &mut BlockIRNode<'a>,
+) -> Option<usize> {
+    let len = el.children.len();
+    if index + 1 >= len {
+        return None;
+    }
+
+    let rendered_before = if index == 0 {
+        0
+    } else {
+        count_rendered_child_nodes(&el.children, 0, index - 1)
+    };
+
+    // Nothing rendered after this block: appending is the correct placement.
+    if count_rendered_child_nodes(&el.children, 0, len - 1) <= rendered_before {
+        return None;
+    }
+
+    let anchor_id = ctx.next_id();
+    block.operation.push(OperationNode::ChildRef(ChildRefIRNode {
+        child_id: anchor_id,
+        parent_id: element_id,
+        offset: rendered_before,
+    }));
+    Some(anchor_id)
 }
 
 fn transform_deferred_parent_control_flow_children<'a>(

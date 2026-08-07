@@ -27,7 +27,18 @@ pub(crate) fn transform_if_node_into_parent<'a>(
     block: &mut BlockIRNode<'a>,
     parent: usize,
 ) {
-    transform_if_node_with_options(ctx, if_node, block, Some(parent), None, false);
+    transform_if_node_into_parent_with_anchor(ctx, if_node, block, parent, None);
+}
+
+/// Same, but anchored before a following node in the parent template.
+pub(crate) fn transform_if_node_into_parent_with_anchor<'a>(
+    ctx: &mut TransformContext<'a>,
+    if_node: &IfNode<'a>,
+    block: &mut BlockIRNode<'a>,
+    parent: usize,
+    anchor: Option<usize>,
+) {
+    transform_if_node_with_options(ctx, if_node, block, Some(parent), anchor, false);
 }
 
 pub(crate) fn transform_if_node_deferred_parent<'a>(
@@ -206,7 +217,18 @@ pub(crate) fn transform_for_node_into_parent<'a>(
     block: &mut BlockIRNode<'a>,
     parent: usize,
 ) {
-    transform_for_node_with_options(ctx, for_node, block, Some(parent), None, false);
+    transform_for_node_into_parent_with_anchor(ctx, for_node, block, parent, None);
+}
+
+/// Same, but anchored before a following node in the parent template.
+pub(crate) fn transform_for_node_into_parent_with_anchor<'a>(
+    ctx: &mut TransformContext<'a>,
+    for_node: &ForNode<'a>,
+    block: &mut BlockIRNode<'a>,
+    parent: usize,
+    anchor: Option<usize>,
+) {
+    transform_for_node_with_options(ctx, for_node, block, Some(parent), anchor, false);
 }
 
 pub(crate) fn transform_for_node_deferred_parent<'a>(
