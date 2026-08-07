@@ -12,8 +12,8 @@ use super::{
     BlockIRNode, ChildRefIRNode, ElementNode, ElementType, NextRefIRNode, OperationNode, PropNode,
     SlotOutletIRNode, String, TemplateChildNode, TransformContext, get_slot_outlet_name,
     get_slot_outlet_props, transform_children, transform_directive,
-    transform_for_node_deferred_parent, transform_for_node_into_parent,
-    transform_if_node_deferred_parent, transform_if_node_into_parent, transform_text_children,
+    transform_for_node_deferred_parent, transform_for_node_into_parent_with_anchor,
+    transform_if_node_deferred_parent, transform_if_node_into_parent_with_anchor, transform_text_children,
 };
 
 /// Transform an element that has control flow children (`v-if`/`v-for`).
@@ -318,19 +318,60 @@ fn transform_existing_element<'a>(
     transform_existing_element_control_flow_children(ctx, el, element_id, block);
 }
 
+/// Anchor a control-flow block before whatever static content follows it.
+///
+/// A `v-if`/`v-for` is inserted at runtime while its static siblings are baked
+/// into the parent template. Without an anchor the runtime appends, so a block
+/// followed by static siblings renders *after* them. Returns a `ChildRef` to
+/// the first following rendered node, or `None` when the block is last and
+/// appending is already correct.
+fn anchor_for_control_flow<'a>(
+    ctx: &mut TransformContext<'a>,
+    children: &[TemplateChildNode<'a>],
+    index: usize,
+    parent_id: usize,
+    block: &mut BlockIRNode<'a>,
+) -> Option<usize> {
+    let rendered = |range: &[TemplateChildNode<'a>]| -> usize {
+        range
+            .iter()
+            .filter(|c| match c {
+                TemplateChildNode::Element(el) => is_template_backed_element(el),
+                TemplateChildNode::Text(_) | TemplateChildNode::Interpolation(_) => true,
+                _ => false,
+            })
+            .count()
+    };
+
+    let before = rendered(&children[..index]);
+    if rendered(&children[index + 1..]) == 0 {
+        return None;
+    }
+
+    let anchor_id = ctx.next_id();
+    block.operation.push(OperationNode::ChildRef(ChildRefIRNode {
+        child_id: anchor_id,
+        parent_id,
+        offset: before,
+    }));
+    Some(anchor_id)
+}
+
 fn transform_control_flow_children_into_parent<'a>(
     ctx: &mut TransformContext<'a>,
     children: &[TemplateChildNode<'a>],
     parent_id: usize,
     block: &mut BlockIRNode<'a>,
 ) {
-    for child in children {
+    for (index, child) in children.iter().enumerate() {
         match child {
             TemplateChildNode::If(if_node) => {
-                transform_if_node_into_parent(ctx, if_node, block, parent_id);
+                let anchor = anchor_for_control_flow(ctx, children, index, parent_id, block);
+                transform_if_node_into_parent_with_anchor(ctx, if_node, block, parent_id, anchor);
             }
             TemplateChildNode::For(for_node) => {
-                transform_for_node_into_parent(ctx, for_node, block, parent_id);
+                let anchor = anchor_for_control_flow(ctx, children, index, parent_id, block);
+                transform_for_node_into_parent_with_anchor(ctx, for_node, block, parent_id, anchor);
             }
             TemplateChildNode::Element(template) if template.tag_type == ElementType::Template => {
                 ensure_sufficient_stack(|| {

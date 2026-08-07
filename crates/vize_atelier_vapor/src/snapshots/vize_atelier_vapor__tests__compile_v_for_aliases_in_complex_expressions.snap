@@ -1,5 +1,6 @@
 ---
-source: crates/vize_atelier_vapor/src/lib.rs
+source: crates/vize_atelier_vapor/src/tests.rs
+assertion_line: 561
 expression: code.as_str()
 ---
 import { txt as _txt, toDisplayString as _toDisplayString, setText as _setText, setClass as _setClass, createInvoker as _createInvoker, setInsertionState as _setInsertionState, renderEffect as _renderEffect, createFor as _createFor, template as _template } from 'vue';
@@ -7,7 +8,7 @@ const t0 = _template("<li> </li>")
 const t1 = _template("<ul></ul>", true)
 export function render(_ctx) {
 const n3 = t1()
-_setInsertionState(n3, null, true)
+_setInsertionState(n3)
 const n0 = _createFor(() => (_ctx.items), (_for_item0) => {
 const n2 = t0()
 const x2 = _txt(n2)

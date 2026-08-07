@@ -1,5 +1,6 @@
 ---
 source: crates/vize_atelier_vapor/src/tests_template_children.rs
+assertion_line: 69
 expression: vapor_output(NESTED)
 ---
 errors=[]
@@ -14,9 +15,9 @@ const t3 = _template("<div><footer>tail</footer></div>", true)
 export function render(_ctx) {
   const n1 = t3()
   const n0 = _child(n1)
-  _setInsertionState(n1, null, true)
+  _setInsertionState(n1)
   const n2 = _createIf(() => ((_ctx.outer) === ('open')), () => {
-    _setInsertionState(n1, null, true)
+    _setInsertionState(n1)
     const n4 = _createIf(() => ((_ctx.inner) === ('x')), () => {
       const n6 = t0()
       return n6
