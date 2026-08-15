@@ -1,0 +1,22 @@
+// Serializable artifacts and emitted modules intentionally use owned standard
+// strings and ordinary formatting at the public compiler boundary.
+#![allow(
+    clippy::disallowed_macros,
+    clippy::disallowed_methods,
+    clippy::disallowed_types
+)]
+
+//! First-class Vize backend for Syrinx ComponentPlan guests.
+//!
+//! This crate consumes Vapor IR before stock JavaScript DOM emit. It emits
+//! immutable host templates plus a DOM-less JavaScript guest; it never parses,
+//! translates, or emulates `@vue/runtime-vapor` calls.
+
+mod compiler;
+mod diagnostic;
+mod guest;
+mod model;
+
+pub use compiler::{SyrinxCompileOptions, compile_syrinx};
+pub use diagnostic::{SyrinxCompileFailure, SyrinxDiagnostic};
+pub use model::*;

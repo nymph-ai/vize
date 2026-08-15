@@ -1,6 +1,7 @@
 //! Transform context for tracking state during AST-to-IR transformation.
 
 use crate::ir::{BlockIRNode, IREffect, OperationNode};
+use vize_atelier_core::SourceLocation;
 use vize_carton::{Bump, FxHashMap, FxHashSet, String, Vec};
 
 /// Transform context
@@ -10,6 +11,8 @@ pub(crate) struct TransformContext<'a> {
     pub(crate) templates: Vec<'a, String>,
     pub(crate) element_template_map: FxHashMap<usize, usize>,
     pub(crate) standalone_text_elements: FxHashSet<usize>,
+    pub(crate) element_source_map: FxHashMap<usize, SourceLocation>,
+    pub(crate) control_source_map: FxHashMap<usize, SourceLocation>,
     non_reactive_scopes: usize,
     pub(crate) diagnostics: std::vec::Vec<String>,
 }
@@ -22,6 +25,8 @@ impl<'a> TransformContext<'a> {
             templates: Vec::new_in(allocator),
             element_template_map: FxHashMap::default(),
             standalone_text_elements: FxHashSet::default(),
+            element_source_map: FxHashMap::default(),
+            control_source_map: FxHashMap::default(),
             non_reactive_scopes: 0,
             diagnostics: std::vec::Vec::new(),
         }
@@ -38,6 +43,14 @@ impl<'a> TransformContext<'a> {
         self.templates.push(template);
         self.element_template_map.insert(element_id, template_index);
         template_index
+    }
+
+    pub(crate) fn register_element(&mut self, element_id: usize, loc: &SourceLocation) {
+        self.element_source_map.insert(element_id, loc.clone());
+    }
+
+    pub(crate) fn register_control(&mut self, control_id: usize, loc: &SourceLocation) {
+        self.control_source_map.insert(control_id, loc.clone());
     }
 
     pub(crate) fn enter_non_reactive_scope(&mut self) {

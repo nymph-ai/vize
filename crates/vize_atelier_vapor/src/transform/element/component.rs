@@ -273,6 +273,7 @@ pub(super) fn transform_component<'a>(
     }
 
     let element_id = existing_id.unwrap_or_else(|| ctx.next_id());
+    ctx.register_element(element_id, &el.loc);
 
     let create_component = CreateComponentIRNode {
         id: element_id,

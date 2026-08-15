@@ -17,6 +17,7 @@ pub mod ir;
 mod ir_drop;
 pub mod lower;
 pub mod steps;
+pub mod template;
 
 #[cfg(test)]
 mod tests;
@@ -34,7 +35,8 @@ mod tests_template_children;
 mod tests_valueless_attr;
 
 pub use compile::{
-    VaporCompileResult, VaporCompilerOptions, compile_vapor, compile_vapor_with_diagnostics,
+    VaporCompileResult, VaporCompilerOptions, VaporIrCompileResult, compile_vapor,
+    compile_vapor_ir, compile_vapor_ir_with_template_syntax, compile_vapor_with_diagnostics,
     compile_vapor_with_template_syntax, compile_vapor_with_template_syntax_and_diagnostics,
 };
 #[allow(deprecated)]
@@ -77,4 +79,8 @@ pub use steps::{
     transform_for_node, transform_if_branches, transform_interpolation, transform_slot_outlet,
     transform_text, transform_v_bind, transform_v_bind_dynamic, transform_v_for, transform_v_if,
     transform_v_model, transform_v_on, transform_v_show,
+};
+pub use template::{
+    TemplateSourceRange, VaporTemplateAnnotations, VaporTemplateAttribute,
+    generate_vapor_element_template, generate_vapor_fragment_template,
 };

@@ -35,6 +35,7 @@ pub use self::props::{
     PropTypeInfo, extract_emit_names_from_type, extract_prop_types_from_type,
     extract_with_defaults_defaults, is_valid_identifier,
 };
+pub use self::statement_sections::extract_script_sections;
 use vize_carton::{String, ToCompactString};
 
 /// Script compilation result

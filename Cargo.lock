@@ -3667,6 +3667,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "vize_atelier_syrinx"
+version = "0.340.0"
+dependencies = [
+ "oxc_allocator",
+ "oxc_ast",
+ "oxc_ast_visit",
+ "oxc_parser",
+ "oxc_semantic",
+ "oxc_span",
+ "oxc_syntax",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror 2.0.18",
+ "vize_atelier_core",
+ "vize_atelier_sfc",
+ "vize_atelier_vapor",
+ "vize_carton",
+]
+
+[[package]]
 name = "vize_atelier_vapor"
 version = "0.340.0"
 dependencies = [

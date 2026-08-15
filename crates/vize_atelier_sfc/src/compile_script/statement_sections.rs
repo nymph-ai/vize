@@ -23,7 +23,7 @@ enum StatementBucket {
     Setup,
 }
 
-pub(crate) fn extract_script_sections(
+pub fn extract_script_sections(
     content: &str,
     is_ts: bool,
 ) -> Option<(Vec<String>, Vec<String>, Vec<String>)> {

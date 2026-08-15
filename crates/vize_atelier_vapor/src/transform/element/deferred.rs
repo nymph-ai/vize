@@ -13,7 +13,8 @@ use super::{
     SlotOutletIRNode, String, TemplateChildNode, TransformContext, get_slot_outlet_name,
     get_slot_outlet_props, transform_children, transform_directive,
     transform_for_node_deferred_parent, transform_for_node_into_parent_with_anchor,
-    transform_if_node_deferred_parent, transform_if_node_into_parent_with_anchor, transform_text_children,
+    transform_if_node_deferred_parent, transform_if_node_into_parent_with_anchor,
+    transform_text_children,
 };
 
 /// Transform an element that has control flow children (`v-if`/`v-for`).
@@ -38,6 +39,7 @@ pub(super) fn transform_element_with_control_flow_children<'a>(
     // Allocate the parent after reserving direct dynamic child IDs so child refs
     // still sort before the parent, while keeping all nested wiring anchored to it.
     let element_id = ctx.next_id();
+    ctx.register_element(element_id, &el.loc);
 
     // Process props and events
     for prop in el.props.iter() {
@@ -75,6 +77,7 @@ fn transform_element_with_deferred_control_flow_parent<'a>(
     transform_deferred_parent_control_flow_children(ctx, el, &mut deferred_children);
 
     let element_id = ctx.next_id();
+    ctx.register_element(element_id, &el.loc);
 
     for prop in el.props.iter() {
         match prop {
@@ -109,6 +112,7 @@ pub(super) fn transform_element_with_dynamic_children<'a>(
 
     // Now allocate parent ID (will be higher than all child IDs)
     let parent_id = ctx.next_id();
+    ctx.register_element(parent_id, &el.loc);
 
     // Generate template (includes all children inline)
     let template = generate_element_template(el);
@@ -219,6 +223,7 @@ fn transform_dynamic_children_in_slice<'a>(
         if !is_static_element(child_el) {
             let child_id = child_ids[*child_id_index];
             *child_id_index += 1;
+            ctx.register_element(child_id, &child_el.loc);
 
             if is_template_backed_element(child_el) {
                 let index = *rendered_index;
@@ -349,11 +354,13 @@ fn anchor_for_control_flow<'a>(
     }
 
     let anchor_id = ctx.next_id();
-    block.operation.push(OperationNode::ChildRef(ChildRefIRNode {
-        child_id: anchor_id,
-        parent_id,
-        offset: before,
-    }));
+    block
+        .operation
+        .push(OperationNode::ChildRef(ChildRefIRNode {
+            child_id: anchor_id,
+            parent_id,
+            offset: before,
+        }));
     Some(anchor_id)
 }
 

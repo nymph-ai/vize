@@ -1,0 +1,31 @@
+[package]
+name = "vize_atelier_syrinx"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Vize backend for renderer-neutral Syrinx ComponentPlan artifacts"
+metadata.vize.stability = "experimental"
+
+[dependencies]
+vize_carton = { workspace = true }
+vize_atelier_core = { workspace = true }
+vize_atelier_sfc = { workspace = true, features = ["native"] }
+vize_atelier_vapor = { workspace = true }
+
+oxc_allocator = { workspace = true }
+oxc_ast = { workspace = true }
+oxc_ast_visit = { workspace = true }
+oxc_parser = { workspace = true }
+oxc_semantic = { workspace = true }
+oxc_span = { workspace = true }
+oxc_syntax = { workspace = true }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

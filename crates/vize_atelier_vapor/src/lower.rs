@@ -52,6 +52,8 @@ pub(crate) fn transform_to_ir_with_diagnostics<'a>(
             templates: ctx.templates,
             element_template_map: ctx.element_template_map,
             standalone_text_elements: ctx.standalone_text_elements,
+            element_source_map: ctx.element_source_map,
+            control_source_map: ctx.control_source_map,
         },
         ctx.diagnostics,
     )
@@ -123,6 +125,12 @@ fn transform_combined_block_text<'a>(
     use vize_carton::{Box, Vec};
 
     let element_id = ctx.next_id();
+    if let Some(loc) = children.iter().find_map(|child| match child {
+        TemplateChildNode::Interpolation(interpolation) => Some(&interpolation.loc),
+        _ => None,
+    }) {
+        ctx.register_element(element_id, loc);
+    }
 
     // Consume IDs for remaining children (they won't be used, but keeps ID
     // allocation consistent with the expected output format)
