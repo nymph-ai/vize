@@ -196,7 +196,7 @@ pub(crate) fn emit_guest(
     let mut output = String::new();
     writeln!(
         output,
-        "import {{ createCompiledSetup as __createCompiledSetup, displayValue as __displayValue, installBranch as __installBranch, installKeyedList as __installKeyedList, invokeHandler as __invokeHandler, styleValue as __styleValue }} from {};",
+        "import {{ createCompiledSetup as __createCompiledSetup, displayValue as __displayValue, installBranch as __installBranch, installChild as __installChild, installConditionalSlot as __installConditionalSlot, installKeyedList as __installKeyedList, installSlotOutlet as __installSlotOutlet, invokeHandler as __invokeHandler, styleValue as __styleValue }} from {};",
         json(options.runtime_module)
     )
     .expect("String writes cannot fail");

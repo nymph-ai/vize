@@ -252,7 +252,7 @@ fn compile_vapor_ir_inner_with_stack<'a>(
 
     // Lower to Vapor IR
     let (ir, transform_diagnostics) =
-        vapor_lower::transform_to_ir_with_diagnostics(allocator, &root);
+        vapor_lower::transform_to_ir_with_diagnostics(allocator, &root, options.custom_renderer);
 
     VaporIrCompileResult {
         root,

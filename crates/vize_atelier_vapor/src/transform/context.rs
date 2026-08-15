@@ -7,6 +7,7 @@ use vize_carton::{Bump, FxHashMap, FxHashSet, String, Vec};
 /// Transform context
 pub(crate) struct TransformContext<'a> {
     pub(crate) allocator: &'a Bump,
+    pub(crate) custom_renderer: bool,
     temp_id: usize,
     pub(crate) templates: Vec<'a, String>,
     pub(crate) element_template_map: FxHashMap<usize, usize>,
@@ -18,9 +19,10 @@ pub(crate) struct TransformContext<'a> {
 }
 
 impl<'a> TransformContext<'a> {
-    pub(crate) fn new(allocator: &'a Bump) -> Self {
+    pub(crate) fn new(allocator: &'a Bump, custom_renderer: bool) -> Self {
         Self {
             allocator,
+            custom_renderer,
             temp_id: 0,
             templates: Vec::new_in(allocator),
             element_template_map: FxHashMap::default(),

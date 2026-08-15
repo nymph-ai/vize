@@ -209,55 +209,43 @@ pub(super) fn transform_component<'a>(
             block: slot_block,
         });
     } else if !el.children.is_empty() {
-        let has_named_slots = el.children.iter().any(|c| {
-            if let TemplateChildNode::Element(child_el) = c {
-                child_el.tag_type == ElementType::Template
-                    && child_el
-                        .props
-                        .iter()
-                        .any(|p| matches!(p, PropNode::Directive(d) if d.name.as_str() == "slot"))
-            } else {
-                false
-            }
-        });
+        let mut named_slot_templates = std::vec::Vec::new();
+        collect_named_slot_templates(&el.children, ctx.custom_renderer, &mut named_slot_templates);
+        let has_named_slots = !named_slot_templates.is_empty();
 
         if has_named_slots {
-            for child in el.children.iter() {
-                if let TemplateChildNode::Element(child_el) = child
-                    && child_el.tag_type == ElementType::Template
-                {
-                    for prop in child_el.props.iter() {
-                        if let PropNode::Directive(dir) = prop
-                            && dir.name.as_str() == "slot"
-                        {
-                            let (slot_name, is_static_name) = slots::resolve_named_slot(dir);
-                            if !is_static_name {
-                                has_dynamic_slot = true;
-                            }
-                            let fn_exp = dir.exp.as_ref().and_then(|exp| match exp {
-                                ExpressionNode::Simple(s) => {
-                                    let node = SimpleExpressionNode::new(
-                                        s.content.clone(),
-                                        false,
-                                        SourceLocation::STUB,
-                                    );
-                                    Some(Box::new_in(node, ctx.allocator))
-                                }
-                                _ => None,
-                            });
-                            let slot_block = transform_children(ctx, &child_el.children);
-                            let _template_id = ctx.next_id(); // consume ID for template wrapper
-                            let name_exp = SimpleExpressionNode::new(
-                                slot_name,
-                                is_static_name,
-                                SourceLocation::STUB,
-                            );
-                            slots.push(IRSlot {
-                                name: Box::new_in(name_exp, ctx.allocator),
-                                fn_exp,
-                                block: slot_block,
-                            });
+            for child_el in named_slot_templates {
+                for prop in child_el.props.iter() {
+                    if let PropNode::Directive(dir) = prop
+                        && dir.name.as_str() == "slot"
+                    {
+                        let (slot_name, is_static_name) = slots::resolve_named_slot(dir);
+                        if !is_static_name {
+                            has_dynamic_slot = true;
                         }
+                        let fn_exp = dir.exp.as_ref().and_then(|exp| match exp {
+                            ExpressionNode::Simple(s) => {
+                                let node = SimpleExpressionNode::new(
+                                    s.content.clone(),
+                                    false,
+                                    SourceLocation::STUB,
+                                );
+                                Some(Box::new_in(node, ctx.allocator))
+                            }
+                            _ => None,
+                        });
+                        let slot_block = transform_children(ctx, &child_el.children);
+                        let _template_id = ctx.next_id(); // consume ID for template wrapper
+                        let name_exp = SimpleExpressionNode::new(
+                            slot_name,
+                            is_static_name,
+                            SourceLocation::STUB,
+                        );
+                        slots.push(IRSlot {
+                            name: Box::new_in(name_exp, ctx.allocator),
+                            fn_exp,
+                            block: slot_block,
+                        });
                     }
                 }
             }
@@ -295,6 +283,35 @@ pub(super) fn transform_component<'a>(
         .push(OperationNode::CreateComponent(create_component));
     if add_return {
         block.returns.push(element_id);
+    }
+}
+
+fn collect_named_slot_templates<'node, 'a>(
+    children: &'node [TemplateChildNode<'a>],
+    descend_structural_slots: bool,
+    slots: &mut std::vec::Vec<&'node ElementNode<'a>>,
+) {
+    for child in children {
+        match child {
+            TemplateChildNode::Element(element)
+                if element.tag_type == ElementType::Template
+                    && element.props.iter().any(|prop| {
+                        matches!(prop, PropNode::Directive(directive)
+                            if directive.name.as_str() == "slot")
+                    }) =>
+            {
+                slots.push(element);
+            }
+            TemplateChildNode::If(node) if descend_structural_slots => {
+                for branch in node.branches.iter() {
+                    collect_named_slot_templates(&branch.children, true, slots);
+                }
+            }
+            TemplateChildNode::For(node) if descend_structural_slots => {
+                collect_named_slot_templates(&node.children, true, slots);
+            }
+            _ => {}
+        }
     }
 }
 

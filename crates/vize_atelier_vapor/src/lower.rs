@@ -25,14 +25,15 @@ use text::{transform_interpolation, transform_text};
 
 /// Transform AST to Vapor IR
 pub fn transform_to_ir<'a>(allocator: &'a Bump, root: &RootNode<'a>) -> RootIRNode<'a> {
-    transform_to_ir_with_diagnostics(allocator, root).0
+    transform_to_ir_with_diagnostics(allocator, root, false).0
 }
 
 pub(crate) fn transform_to_ir_with_diagnostics<'a>(
     allocator: &'a Bump,
     root: &RootNode<'a>,
+    custom_renderer: bool,
 ) -> (RootIRNode<'a>, std::vec::Vec<String>) {
-    let mut ctx = TransformContext::new(allocator);
+    let mut ctx = TransformContext::new(allocator, custom_renderer);
 
     // Create block for root
     let block = transform_children(&mut ctx, &root.children);

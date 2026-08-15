@@ -176,6 +176,7 @@ pub struct ChildSite {
 pub struct SlotDefinition {
     pub id: u32,
     pub name: String,
+    pub template: u32,
     pub source_span: u32,
 }
 

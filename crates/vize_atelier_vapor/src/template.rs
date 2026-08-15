@@ -204,6 +204,16 @@ fn append_fragment(
                 template.push_str(&child);
                 index += 1;
             }
+            TemplateChildNode::Element(element)
+                if matches!(element.tag_type, ElementType::Component | ElementType::Slot) =>
+            {
+                if let Some(marker) = annotations.control_anchor(&element.loc) {
+                    template.push_str("<!--");
+                    template.push_str(marker);
+                    template.push_str("-->");
+                }
+                index += 1;
+            }
             TemplateChildNode::If(node) => {
                 if let Some(marker) = annotations.control_anchor(&node.loc) {
                     template.push_str("<!--");

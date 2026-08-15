@@ -332,12 +332,8 @@ fn unsupported_template_semantics_fail_closed_with_named_diagnostics() {
             "SYRINX_TEMPLATE_REF_FORBIDDEN",
         ),
         (
-            r#"<script setup></script><template><slot /></template>"#,
-            "SYRINX_UNSUPPORTED_SLOT",
-        ),
-        (
             r#"<script setup></script><template><Widget /></template>"#,
-            "SYRINX_UNSUPPORTED_COMPONENT",
+            "SYRINX_UNRESOLVED_COMPONENT",
         ),
     ] {
         let error = compile_syrinx(source, options()).expect_err(code);

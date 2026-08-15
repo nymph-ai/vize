@@ -17,6 +17,9 @@ mod diagnostic;
 mod guest;
 mod model;
 
-pub use compiler::{SyrinxCompileOptions, compile_syrinx};
+pub use compiler::{
+    SyrinxCompileOptions, SyrinxComponentLink, SyrinxProgramSource, compile_syrinx,
+    compile_syrinx_program,
+};
 pub use diagnostic::{SyrinxCompileFailure, SyrinxDiagnostic};
 pub use model::*;
