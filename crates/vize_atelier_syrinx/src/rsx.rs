@@ -2,19 +2,21 @@
 //!
 //! The generated Rust owns the render tree. Vue expressions are represented by
 //! typed, source-located render-model fields; later expression passes fill
-//! those fields directly in Rust or with an explicitly classified pure
-//! residual function. There is no mutation protocol, JavaScript guest, site
-//! table, or renderer node identity in this artifact.
+//! those fields directly in Rust. There is no mutation protocol, JavaScript
+//! guest, site table, or renderer node identity in this artifact.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use vize_atelier_core::{
     ElementNode, ElementType, ExpressionNode, PropNode, SourceLocation, TemplateChildNode,
     TemplateSyntaxMode, TextCallContent,
 };
-use vize_atelier_sfc::{SfcParseOptions, parse_sfc};
+use vize_atelier_sfc::{
+    SfcDescriptor, SfcParseOptions, StyleCompileOptions, parse_sfc, style::compile_style,
+};
 use vize_atelier_vapor::{VaporCompilerOptions, compile_vapor_ir_with_template_syntax};
 use vize_carton::Bump;
 
@@ -73,6 +75,7 @@ pub struct SyrinxRsxArtifact {
 enum FieldKind {
     Text,
     Attribute,
+    DynamicAttributes,
     Condition,
     Event(&'static str),
     Slot,
@@ -83,6 +86,7 @@ impl FieldKind {
     fn rust_type(&self) -> String {
         match self {
             Self::Text | Self::Attribute => "String".to_owned(),
+            Self::DynamicAttributes => "Vec<Attribute>".to_owned(),
             Self::Condition => "bool".to_owned(),
             Self::Event(event) => format!("EventHandler<{event}>"),
             Self::Slot => "Element".to_owned(),
@@ -105,6 +109,7 @@ struct ListModel {
     source: String,
     value_alias: Option<String>,
     index_alias: Option<String>,
+    uses_index: bool,
     data_fields: BTreeSet<String>,
     fields: Vec<ModelField>,
 }
@@ -120,6 +125,7 @@ enum RefKind {
     OptionalString,
     Bool,
     String,
+    MountedData,
 }
 
 impl RefKind {
@@ -128,6 +134,7 @@ impl RefKind {
             Self::OptionalString => "Signal<Option<String>>",
             Self::Bool => "Signal<bool>",
             Self::String => "Signal<String>",
+            Self::MountedData => "Signal<Option<Rc<MountedData>>>",
         }
     }
 }
@@ -152,6 +159,7 @@ struct RsxEmitter {
     root_fields: Vec<ModelField>,
     lists: Vec<ListModel>,
     script: ScriptLowering,
+    scope_token: Option<String>,
     used_bindings: BTreeSet<String>,
     hooks: Vec<RsxExpressionHook>,
     next_field: u32,
@@ -186,13 +194,11 @@ impl ScriptLowering {
                         kind: RefKind::Bool,
                         initial: argument.to_owned(),
                     })
-                } else if let Some(value) = js_string_literal(argument) {
-                    Some(RefBinding {
+                } else {
+                    js_string_literal(argument).map(|value| RefBinding {
                         kind: RefKind::String,
                         initial: format!("{}.to_owned()", rust_string(&value)),
                     })
-                } else {
-                    None
                 };
                 if let Some(binding) = binding {
                     lowering.refs.insert(name.to_owned(), binding);
@@ -329,27 +335,65 @@ pub fn compile_syrinx_rsx(
             diagnostics: modifier_diagnostics,
         });
     }
+    let dynamic_component_prop_diagnostics = validate_dynamic_component_props(
+        source,
+        &options.filename,
+        template.loc.start,
+        &lowered.root.children,
+    );
+    if !dynamic_component_prop_diagnostics.is_empty() {
+        return Err(SyrinxCompileFailure {
+            diagnostics: dynamic_component_prop_diagnostics,
+        });
+    }
     let component_name = options
         .component_name
         .clone()
         .unwrap_or_else(|| component_name_from_filename(&options.filename));
-    let script_lowering = ScriptLowering::parse(script_content);
+    let scope_token = descriptor
+        .styles
+        .iter()
+        .any(|style| style.scoped)
+        .then(|| format!("data-v-syrinx-{}", &sha256(source.as_bytes())[..8]));
+    if scope_token.is_some() {
+        let diagnostics = validate_scoped_component_boundaries(
+            source,
+            &options.filename,
+            template.loc.start,
+            &lowered.root.children,
+        );
+        if !diagnostics.is_empty() {
+            return Err(SyrinxCompileFailure { diagnostics });
+        }
+    }
+    let css = compile_rsx_styles(
+        source,
+        &options.filename,
+        &descriptor,
+        scope_token.as_deref(),
+    )?;
+    let mut script_lowering = ScriptLowering::parse(script_content);
+    let template_ref_diagnostics = prepare_template_refs(
+        source,
+        &options.filename,
+        template.loc.start,
+        &lowered.root.children,
+        false,
+        &mut script_lowering,
+    );
+    if !template_ref_diagnostics.is_empty() {
+        return Err(SyrinxCompileFailure {
+            diagnostics: template_ref_diagnostics,
+        });
+    }
     let reactive_bindings = script_lowering
         .refs
         .keys()
         .chain(script_lowering.computed.keys())
         .cloned()
         .collect::<Vec<_>>();
-    let mut emitter = RsxEmitter::new(component_name, script_lowering);
+    let mut emitter = RsxEmitter::new(component_name, script_lowering, scope_token);
     emitter.emit_children(&lowered.root.children, Scope::Root);
-    let css = descriptor
-        .styles
-        .iter()
-        .map(|style| style.content.as_ref())
-        .collect::<Vec<_>>()
-        .join("\n")
-        .trim()
-        .to_owned();
     let mut artifact = emitter.finish(css);
     for hook in &mut artifact.expression_hooks {
         hook.start_byte += template.loc.start as u32;
@@ -378,6 +422,251 @@ pub fn compile_syrinx_rsx(
         ));
     }
     Ok(artifact)
+}
+
+fn compile_rsx_styles(
+    source: &str,
+    filename: &str,
+    descriptor: &SfcDescriptor<'_>,
+    scope_token: Option<&str>,
+) -> Result<String, SyrinxCompileFailure> {
+    let mut compiled = Vec::with_capacity(descriptor.styles.len());
+    for style in &descriptor.styles {
+        if style.src.is_some() || style.lang.as_deref().is_some_and(|lang| lang != "css") {
+            return Err(file_failure(
+                source,
+                filename,
+                "SYRINX_RSX_UNSUPPORTED_STYLE_SOURCE",
+                "External and preprocessed styles must be resolved before RSX compilation.",
+                style.loc.tag_start,
+                style.loc.tag_end,
+            ));
+        }
+        let css = compile_style(
+            style,
+            &StyleCompileOptions {
+                id: scope_token.unwrap_or("data-v-syrinx").to_owned().into(),
+                scoped: style.scoped,
+                trim: true,
+                source_map: true,
+                ..Default::default()
+            },
+        )
+        .map_err(|error| {
+            file_failure(
+                source,
+                filename,
+                error
+                    .code
+                    .as_deref()
+                    .unwrap_or("SYRINX_RSX_STYLE_COMPILE_ERROR"),
+                error.message.as_str(),
+                style.loc.start,
+                style.loc.end,
+            )
+        })?;
+        let css = if style.scoped {
+            rewrite_scoped_keyframes(css.trim(), scope_token.expect("scoped styles have a token"))
+                .map_err(|message| {
+                file_failure(
+                    source,
+                    filename,
+                    "SYRINX_RSX_SCOPED_KEYFRAMES_UNSUPPORTED",
+                    message,
+                    style.loc.start,
+                    style.loc.end,
+                )
+            })?
+        } else {
+            css.trim().to_owned()
+        };
+        compiled.push(css);
+    }
+    Ok(compiled.join("\n"))
+}
+
+fn sha256(bytes: &[u8]) -> String {
+    Sha256::digest(bytes)
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}
+
+#[derive(Debug)]
+struct CssReplacement {
+    start: usize,
+    end: usize,
+    value: String,
+}
+
+fn rewrite_scoped_keyframes(css: &str, scope_token: &str) -> Result<String, &'static str> {
+    let bytes = css.as_bytes();
+    let suffix = scope_token.strip_prefix("data-v-").unwrap_or(scope_token);
+    let mut names = BTreeMap::new();
+    let mut replacements = Vec::new();
+    let mut index = 0;
+    while index < bytes.len() {
+        if let Some(end) = css_comment_end(bytes, index) {
+            index = end;
+            continue;
+        }
+        if let Some(end) = css_string_end(bytes, index) {
+            index = end;
+            continue;
+        }
+        if bytes[index] != b'@' {
+            index += 1;
+            continue;
+        }
+        let at_rule_start = index;
+        index += 1;
+        while index < bytes.len() && is_css_identifier_byte(bytes[index]) {
+            index += 1;
+        }
+        let at_rule = css[at_rule_start + 1..index].to_ascii_lowercase();
+        let is_keyframes =
+            at_rule == "keyframes" || (at_rule.starts_with('-') && at_rule.ends_with("-keyframes"));
+        if !is_keyframes {
+            continue;
+        }
+        index = skip_css_trivia(bytes, index);
+        let name_start = index;
+        while index < bytes.len() && is_css_identifier_byte(bytes[index]) {
+            index += 1;
+        }
+        if name_start == index {
+            return Err("Scoped keyframe names must be static CSS identifiers.");
+        }
+        let name = &css[name_start..index];
+        let body_start = skip_css_trivia(bytes, index);
+        if bytes.get(body_start) != Some(&b'{') {
+            return Err("Escaped and quoted scoped keyframe names are not supported.");
+        }
+        let scoped_name = format!("{name}-{suffix}");
+        names.insert(name.to_owned(), scoped_name.clone());
+        replacements.push(CssReplacement {
+            start: name_start,
+            end: index,
+            value: scoped_name,
+        });
+    }
+    if names.is_empty() {
+        return Ok(css.to_owned());
+    }
+
+    let mut declaration_start = 0;
+    let mut animation_value = false;
+    let mut paren_depth = 0_u32;
+    let mut bracket_depth = 0_u32;
+    index = 0;
+    while index < bytes.len() {
+        if let Some(end) = css_comment_end(bytes, index) {
+            index = end;
+            continue;
+        }
+        if let Some(end) = css_string_end(bytes, index) {
+            index = end;
+            continue;
+        }
+        match bytes[index] {
+            b'(' => paren_depth += 1,
+            b')' => paren_depth = paren_depth.saturating_sub(1),
+            b'[' => bracket_depth += 1,
+            b']' => bracket_depth = bracket_depth.saturating_sub(1),
+            b'{' | b';' | b'}' if paren_depth == 0 && bracket_depth == 0 => {
+                declaration_start = index + 1;
+                animation_value = false;
+            }
+            b':' if paren_depth == 0 && bracket_depth == 0 && !animation_value => {
+                let property = css[declaration_start..index].trim().to_ascii_lowercase();
+                animation_value = property == "animation"
+                    || property == "animation-name"
+                    || (property.starts_with('-')
+                        && (property.ends_with("-animation")
+                            || property.ends_with("-animation-name")));
+            }
+            byte if animation_value && is_css_identifier_byte(byte) => {
+                let name_start = index;
+                while index < bytes.len() && is_css_identifier_byte(bytes[index]) {
+                    index += 1;
+                }
+                let name = &css[name_start..index];
+                if let Some(scoped_name) = names.get(name) {
+                    replacements.push(CssReplacement {
+                        start: name_start,
+                        end: index,
+                        value: scoped_name.clone(),
+                    });
+                }
+                continue;
+            }
+            _ => {}
+        }
+        index += 1;
+    }
+
+    replacements.sort_by_key(|replacement| replacement.start);
+    replacements.dedup_by_key(|replacement| replacement.start);
+    let mut output = String::with_capacity(css.len() + replacements.len() * suffix.len());
+    let mut cursor = 0;
+    for replacement in replacements {
+        if replacement.start < cursor {
+            continue;
+        }
+        output.push_str(&css[cursor..replacement.start]);
+        output.push_str(&replacement.value);
+        cursor = replacement.end;
+    }
+    output.push_str(&css[cursor..]);
+    Ok(output)
+}
+
+fn css_comment_end(bytes: &[u8], start: usize) -> Option<usize> {
+    if bytes.get(start..start + 2) != Some(&b"/*"[..]) {
+        return None;
+    }
+    let mut index = start + 2;
+    while index + 1 < bytes.len() {
+        if bytes[index..index + 2] == *b"*/" {
+            return Some(index + 2);
+        }
+        index += 1;
+    }
+    Some(bytes.len())
+}
+
+fn css_string_end(bytes: &[u8], start: usize) -> Option<usize> {
+    let quote = *bytes.get(start)?;
+    if !matches!(quote, b'\'' | b'"') {
+        return None;
+    }
+    let mut index = start + 1;
+    while index < bytes.len() {
+        if bytes[index] == b'\\' {
+            index = (index + 2).min(bytes.len());
+        } else if bytes[index] == quote {
+            return Some(index + 1);
+        } else {
+            index += 1;
+        }
+    }
+    Some(bytes.len())
+}
+
+fn skip_css_trivia(bytes: &[u8], mut index: usize) -> usize {
+    loop {
+        while index < bytes.len() && bytes[index].is_ascii_whitespace() {
+            index += 1;
+        }
+        let Some(end) = css_comment_end(bytes, index) else {
+            return index;
+        };
+        index = end;
+    }
+}
+
+fn is_css_identifier_byte(byte: u8) -> bool {
+    byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-')
 }
 
 fn sfc_failure(
@@ -450,7 +739,7 @@ fn line_column(source: &str, offset: usize) -> (u32, u32) {
 }
 
 impl RsxEmitter {
-    fn new(component_name: String, script: ScriptLowering) -> Self {
+    fn new(component_name: String, script: ScriptLowering, scope_token: Option<String>) -> Self {
         let component_name = rust_type_name(&component_name);
         Self {
             model_name: format!("{component_name}Model"),
@@ -458,6 +747,7 @@ impl RsxEmitter {
             root_fields: Vec::new(),
             lists: Vec::new(),
             script,
+            scope_token,
             used_bindings: BTreeSet::new(),
             hooks: Vec::new(),
             next_field: 1,
@@ -469,7 +759,16 @@ impl RsxEmitter {
     fn finish(self, css: String) -> SyrinxRsxArtifact {
         let mut source = String::new();
         writeln!(source, "// @generated by vize_atelier_syrinx; do not edit.").unwrap();
-        writeln!(source, "use dioxus::prelude::*;\n").unwrap();
+        writeln!(source, "use dioxus::prelude::*;").unwrap();
+        if self
+            .script
+            .refs
+            .values()
+            .any(|binding| binding.kind == RefKind::MountedData)
+        {
+            writeln!(source, "use std::rc::Rc;").unwrap();
+        }
+        writeln!(source).unwrap();
         for list in &self.lists {
             writeln!(source, "/// Render data for one `{}` item.", list.source).unwrap();
             writeln!(source, "#[derive(Clone, PartialEq)]").unwrap();
@@ -563,7 +862,7 @@ impl RsxEmitter {
                     "text",
                     interpolation.content.loc(),
                 );
-                self.line(&format!("{{{value}.clone()}}"));
+                self.line(&format!("{{{}}}", owned_render_value(&value)));
             }
             TemplateChildNode::If(node) => {
                 for (index, branch) in node.branches.iter().enumerate() {
@@ -609,7 +908,7 @@ impl RsxEmitter {
                         "text",
                         interpolation.content.loc(),
                     );
-                    self.line(&format!("{{{value}.clone()}}"));
+                    self.line(&format!("{{{}}}", owned_render_value(&value)));
                 }
                 TextCallContent::Compound(compound) => {
                     let expression = compound.loc.source.to_string();
@@ -621,7 +920,7 @@ impl RsxEmitter {
                         "text",
                         &compound.loc,
                     );
-                    self.line(&format!("{{{value}.clone()}}"));
+                    self.line(&format!("{{{}}}", owned_render_value(&value)));
                 }
             },
             TemplateChildNode::CompoundExpression(compound) => {
@@ -634,7 +933,7 @@ impl RsxEmitter {
                     "text",
                     &compound.loc,
                 );
-                self.line(&format!("{{{value}.clone()}}"));
+                self.line(&format!("{{{}}}", owned_render_value(&value)));
             }
             TemplateChildNode::Hoisted(_) => {
                 self.line("// Static hoist is materialized by the RSX frontend.");
@@ -656,7 +955,7 @@ impl RsxEmitter {
                 "slot",
                 &element.loc,
             );
-            self.line(&format!("{{{value}.clone()}}"));
+            self.line(&format!("{{{}}}", owned_render_value(&value)));
             return;
         }
 
@@ -667,7 +966,22 @@ impl RsxEmitter {
         };
         self.line(&format!("{tag} {{"));
         self.indent += 1;
+        if element.tag_type != ElementType::Component
+            && let Some(scope_token) = self.scope_token.clone()
+        {
+            self.line(&format!("{scope_token:?}: \"true\","));
+        }
+        if let Some(template_ref) = element_template_ref(element) {
+            self.used_bindings.insert(template_ref.clone());
+            self.line(&format!(
+                "onmounted: move |event| {template_ref}.set(Some(event.data())),"
+            ));
+        }
+        let mut dynamic_attribute_spreads = Vec::new();
         for prop in element.props.iter() {
+            if is_template_ref_prop(prop) {
+                continue;
+            }
             match prop {
                 PropNode::Attribute(attribute) => {
                     let name = rsx_attribute_name(attribute.name.as_str());
@@ -688,12 +1002,33 @@ impl RsxEmitter {
                         .as_ref()
                         .map(expression_content)
                         .unwrap_or_else(|| name.clone());
+                    if !expression_is_static(argument) {
+                        let dynamic = self.add_field(
+                            scope,
+                            FieldKind::DynamicAttributes,
+                            "dynamic_attributes",
+                            format!("[{{ name: {name}, value: {expression} }}]"),
+                            "dynamic-attributes",
+                            &directive.loc,
+                        );
+                        dynamic_attribute_spreads.push(dynamic);
+                        continue;
+                    }
+                    let role = if name == "style" {
+                        "style".to_owned()
+                    } else {
+                        format!("attribute:{name}")
+                    };
                     let value = self.add_field(
                         scope,
                         FieldKind::Attribute,
-                        if name == "key" { "key" } else { "attribute" },
+                        match name.as_str() {
+                            "key" => "key",
+                            "style" => "style",
+                            _ => "attribute",
+                        },
                         expression,
-                        &format!("attribute:{name}"),
+                        &role,
                         directive
                             .exp
                             .as_ref()
@@ -708,7 +1043,7 @@ impl RsxEmitter {
                         let value = value.strip_suffix(".clone()").unwrap_or(&value);
                         self.line(&format!("key: \"{{{value}}}\","));
                     } else {
-                        self.line(&format!("{name}: ({value}).clone(),"));
+                        self.line(&format!("{name}: {},", owned_render_value(&value)));
                     }
                 }
                 PropNode::Directive(directive) if directive.name.as_str() == "on" => {
@@ -722,9 +1057,14 @@ impl RsxEmitter {
                         .as_ref()
                         .map(expression_content)
                         .unwrap_or_default();
+                    let handler_event_type = if element.tag_type == ElementType::Component {
+                        "()"
+                    } else {
+                        event_type(&event).expect("event names are validated before RSX emission")
+                    };
                     let value = self.add_field(
                         scope,
-                        FieldKind::Event(event_type(&event)),
+                        FieldKind::Event(handler_event_type),
                         "event",
                         expression,
                         &format!("event:{event}"),
@@ -766,6 +1106,9 @@ impl RsxEmitter {
                 PropNode::Directive(_) => {}
             }
         }
+        for dynamic in dynamic_attribute_spreads {
+            self.line(&format!("..{dynamic}.clone(),"));
+        }
         self.emit_children(&element.children, scope);
         self.indent -= 1;
         self.line("}");
@@ -784,6 +1127,7 @@ impl RsxEmitter {
             source: source.clone(),
             value_alias: node.value_alias.as_ref().map(expression_content),
             index_alias: node.key_alias.as_ref().map(expression_content),
+            uses_index: false,
             data_fields: BTreeSet::new(),
             fields: Vec::new(),
         });
@@ -810,13 +1154,18 @@ impl RsxEmitter {
             start_byte: node.source.loc().start.offset,
             end_byte: node.source.loc().end.offset,
         });
-        self.line(&format!(
-            "for (_index_{id}, item_{id}) in {reference}.iter().enumerate() {{"
-        ));
+        let marker = format!("__SYRINX_FOR_{id}__");
+        self.line(&marker);
         self.indent += 1;
         self.emit_children(&node.children, Scope::List(index));
         self.indent -= 1;
         self.line("}");
+        let header = if self.lists[index].uses_index {
+            format!("for (_index_{id}, item_{id}) in {reference}.iter().enumerate() {{")
+        } else {
+            format!("for item_{id} in {reference}.iter() {{")
+        };
+        self.body = self.body.replacen(&marker, &header, 1);
     }
 
     fn add_field(
@@ -922,13 +1271,14 @@ impl RsxEmitter {
         let index_alias = self.lists[list_index].index_alias.clone();
         let item = format!("item_{list_id}");
 
-        if let Some(property) = expression.strip_prefix(&format!("{value_alias}.")) {
-            if is_rust_identifier(property) && !matches!(kind, FieldKind::Condition) {
-                self.lists[list_index]
-                    .data_fields
-                    .insert(property.to_owned());
-                return Some(format!("{item}.{property}.clone()"));
-            }
+        if let Some(property) = expression.strip_prefix(&format!("{value_alias}."))
+            && is_rust_identifier(property)
+            && !matches!(kind, FieldKind::Condition)
+        {
+            self.lists[list_index]
+                .data_fields
+                .insert(property.to_owned());
+            return Some(format!("{item}.{property}.clone()"));
         }
 
         for formatter in &self.script.formatters {
@@ -938,6 +1288,7 @@ impl RsxEmitter {
                     .data_fields
                     .insert("label".to_owned());
                 self.used_bindings.insert(formatter.clone());
+                self.lists[list_index].uses_index = true;
                 let index = index_alias.as_ref().map_or_else(
                     || format!("_index_{list_id}"),
                     |_| format!("_index_{list_id}"),
@@ -1058,6 +1409,390 @@ fn validate_event_modifiers(
     diagnostics
 }
 
+fn prepare_template_refs(
+    source: &str,
+    filename: &str,
+    template_start: usize,
+    children: &[TemplateChildNode<'_>],
+    in_for: bool,
+    script: &mut ScriptLowering,
+) -> Vec<SyrinxDiagnostic> {
+    let mut diagnostics = Vec::new();
+    collect_template_ref_diagnostics(
+        source,
+        filename,
+        template_start,
+        children,
+        in_for,
+        script,
+        &mut diagnostics,
+    );
+    diagnostics
+}
+
+fn validate_scoped_component_boundaries(
+    source: &str,
+    filename: &str,
+    template_start: usize,
+    children: &[TemplateChildNode<'_>],
+) -> Vec<SyrinxDiagnostic> {
+    let mut diagnostics = Vec::new();
+    collect_scoped_component_diagnostics(
+        source,
+        filename,
+        template_start,
+        children,
+        &mut diagnostics,
+    );
+    diagnostics
+}
+
+fn validate_dynamic_component_props(
+    source: &str,
+    filename: &str,
+    template_start: usize,
+    children: &[TemplateChildNode<'_>],
+) -> Vec<SyrinxDiagnostic> {
+    let mut diagnostics = Vec::new();
+    collect_dynamic_component_prop_diagnostics(
+        source,
+        filename,
+        template_start,
+        children,
+        &mut diagnostics,
+    );
+    diagnostics
+}
+
+fn collect_dynamic_component_prop_diagnostics(
+    source: &str,
+    filename: &str,
+    template_start: usize,
+    children: &[TemplateChildNode<'_>],
+    diagnostics: &mut Vec<SyrinxDiagnostic>,
+) {
+    for child in children {
+        match child {
+            TemplateChildNode::Element(element) => {
+                if element.tag_type == ElementType::Component {
+                    for directive in element.props.iter().filter_map(|prop| match prop {
+                        PropNode::Directive(directive) if directive.name.as_str() == "bind" => {
+                            Some(directive)
+                        }
+                        _ => None,
+                    }) {
+                        if directive
+                            .arg
+                            .as_ref()
+                            .is_none_or(|argument| !expression_is_static(argument))
+                        {
+                            diagnostics.push(source_diagnostic(
+                                source,
+                                filename,
+                                "SYRINX_RSX_DYNAMIC_COMPONENT_PROP_UNSUPPORTED",
+                                "Dynamic component prop names cannot be proven against a static Rust Props type.",
+                                template_start + directive.loc.start.offset as usize,
+                                template_start + directive.loc.end.offset as usize,
+                            ));
+                        }
+                    }
+                }
+                collect_dynamic_component_prop_diagnostics(
+                    source,
+                    filename,
+                    template_start,
+                    &element.children,
+                    diagnostics,
+                );
+            }
+            TemplateChildNode::If(node) => {
+                for branch in &node.branches {
+                    collect_dynamic_component_prop_diagnostics(
+                        source,
+                        filename,
+                        template_start,
+                        &branch.children,
+                        diagnostics,
+                    );
+                }
+            }
+            TemplateChildNode::For(node) => collect_dynamic_component_prop_diagnostics(
+                source,
+                filename,
+                template_start,
+                &node.children,
+                diagnostics,
+            ),
+            _ => {}
+        }
+    }
+}
+
+fn collect_scoped_component_diagnostics(
+    source: &str,
+    filename: &str,
+    template_start: usize,
+    children: &[TemplateChildNode<'_>],
+    diagnostics: &mut Vec<SyrinxDiagnostic>,
+) {
+    for child in children {
+        match child {
+            TemplateChildNode::Element(element) => {
+                if element.tag_type == ElementType::Component {
+                    diagnostics.push(source_diagnostic(
+                        source,
+                        filename,
+                        "SYRINX_RSX_SCOPED_COMPONENT_BOUNDARY",
+                        "Scoped parent styles require forwarding the scope attribute to the child component root.",
+                        template_start + element.loc.start.offset as usize,
+                        template_start + element.loc.end.offset as usize,
+                    ));
+                }
+                collect_scoped_component_diagnostics(
+                    source,
+                    filename,
+                    template_start,
+                    &element.children,
+                    diagnostics,
+                );
+            }
+            TemplateChildNode::If(node) => {
+                for branch in &node.branches {
+                    collect_scoped_component_diagnostics(
+                        source,
+                        filename,
+                        template_start,
+                        &branch.children,
+                        diagnostics,
+                    );
+                }
+            }
+            TemplateChildNode::For(node) => collect_scoped_component_diagnostics(
+                source,
+                filename,
+                template_start,
+                &node.children,
+                diagnostics,
+            ),
+            _ => {}
+        }
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn collect_template_ref_diagnostics(
+    source: &str,
+    filename: &str,
+    template_start: usize,
+    children: &[TemplateChildNode<'_>],
+    in_for: bool,
+    script: &mut ScriptLowering,
+    diagnostics: &mut Vec<SyrinxDiagnostic>,
+) {
+    for child in children {
+        match child {
+            TemplateChildNode::Element(element) => {
+                let refs = element
+                    .props
+                    .iter()
+                    .filter_map(template_ref_binding)
+                    .collect::<Vec<_>>();
+                for (name, location) in &refs {
+                    let absolute_start = template_start + location.start.offset as usize;
+                    let absolute_end = template_start + location.end.offset as usize;
+                    if element.tag_type == ElementType::Component {
+                        diagnostics.push(source_diagnostic(
+                            source,
+                            filename,
+                            "SYRINX_RSX_COMPONENT_REF_UNSUPPORTED",
+                            "Component refs expose a component instance rather than renderer-neutral mounted element data.",
+                            absolute_start,
+                            absolute_end,
+                        ));
+                        continue;
+                    }
+                    if in_for {
+                        diagnostics.push(source_diagnostic(
+                            source,
+                            filename,
+                            "SYRINX_RSX_TEMPLATE_REF_FOR_UNSUPPORTED",
+                            "Template refs inside v-for require an ordered mounted-node collection.",
+                            absolute_start,
+                            absolute_end,
+                        ));
+                        continue;
+                    }
+                    if refs.len() > 1 {
+                        diagnostics.push(source_diagnostic(
+                            source,
+                            filename,
+                            "SYRINX_RSX_DUPLICATE_TEMPLATE_REF",
+                            "An element can lower exactly one Vue template ref.",
+                            absolute_start,
+                            absolute_end,
+                        ));
+                        continue;
+                    }
+                    if element.props.iter().any(is_mounted_event_prop) {
+                        diagnostics.push(source_diagnostic(
+                            source,
+                            filename,
+                            "SYRINX_RSX_TEMPLATE_REF_MOUNT_CONFLICT",
+                            "A template ref and an authored mounted handler cannot share one Dioxus onmounted slot.",
+                            absolute_start,
+                            absolute_end,
+                        ));
+                        continue;
+                    }
+                    if !is_rust_identifier(name) {
+                        diagnostics.push(source_diagnostic(
+                            source,
+                            filename,
+                            "SYRINX_RSX_TEMPLATE_REF_BINDING_REQUIRED",
+                            "A template ref must name one ref(null) setup binding.",
+                            absolute_start,
+                            absolute_end,
+                        ));
+                        continue;
+                    }
+                    let Some(binding) = script.refs.get_mut(name) else {
+                        diagnostics.push(source_diagnostic(
+                            source,
+                            filename,
+                            "SYRINX_RSX_TEMPLATE_REF_BINDING_REQUIRED",
+                            &format!(
+                                "Template ref `{name}` must be declared as ref(null) in <script setup>."
+                            ),
+                            absolute_start,
+                            absolute_end,
+                        ));
+                        continue;
+                    };
+                    if binding.kind != RefKind::OptionalString
+                        && binding.kind != RefKind::MountedData
+                    {
+                        diagnostics.push(source_diagnostic(
+                            source,
+                            filename,
+                            "SYRINX_RSX_TEMPLATE_REF_BINDING_REQUIRED",
+                            &format!("Template ref `{name}` must be initialized with ref(null)."),
+                            absolute_start,
+                            absolute_end,
+                        ));
+                        continue;
+                    }
+                    binding.kind = RefKind::MountedData;
+                    binding.initial = "None::<Rc<MountedData>>".to_owned();
+                }
+                for prop in &element.props {
+                    if is_ref_collection_prop(prop) {
+                        let location = prop.loc();
+                        diagnostics.push(source_diagnostic(
+                            source,
+                            filename,
+                            "SYRINX_RSX_TEMPLATE_REF_FOR_UNSUPPORTED",
+                            "ref_for/ref_key require an ordered mounted-node collection.",
+                            template_start + location.start.offset as usize,
+                            template_start + location.end.offset as usize,
+                        ));
+                    }
+                }
+                collect_template_ref_diagnostics(
+                    source,
+                    filename,
+                    template_start,
+                    &element.children,
+                    in_for,
+                    script,
+                    diagnostics,
+                );
+            }
+            TemplateChildNode::If(node) => {
+                for branch in &node.branches {
+                    collect_template_ref_diagnostics(
+                        source,
+                        filename,
+                        template_start,
+                        &branch.children,
+                        in_for,
+                        script,
+                        diagnostics,
+                    );
+                }
+            }
+            TemplateChildNode::For(node) => collect_template_ref_diagnostics(
+                source,
+                filename,
+                template_start,
+                &node.children,
+                true,
+                script,
+                diagnostics,
+            ),
+            _ => {}
+        }
+    }
+}
+
+fn template_ref_binding(prop: &PropNode<'_>) -> Option<(String, SourceLocation)> {
+    match prop {
+        PropNode::Attribute(attribute) if attribute.name.as_str() == "ref" => attribute
+            .value
+            .as_ref()
+            .map(|value| (value.content.to_string(), prop.loc().clone())),
+        PropNode::Directive(directive)
+            if directive.name.as_str() == "bind"
+                && directive.arg.as_ref().is_some_and(|argument| {
+                    expression_is_static(argument) && expression_content(argument) == "ref"
+                }) =>
+        {
+            directive
+                .exp
+                .as_ref()
+                .map(|expression| (expression_content(expression), prop.loc().clone()))
+        }
+        _ => None,
+    }
+}
+
+fn element_template_ref(element: &ElementNode<'_>) -> Option<String> {
+    element
+        .props
+        .iter()
+        .find_map(template_ref_binding)
+        .map(|(name, _)| name)
+}
+
+fn is_template_ref_prop(prop: &PropNode<'_>) -> bool {
+    template_ref_binding(prop).is_some()
+}
+
+fn is_ref_collection_prop(prop: &PropNode<'_>) -> bool {
+    match prop {
+        PropNode::Attribute(attribute) => {
+            matches!(attribute.name.as_str(), "ref_for" | "ref_key")
+        }
+        PropNode::Directive(directive) if directive.name.as_str() == "bind" => {
+            directive.arg.as_ref().is_some_and(|argument| {
+                expression_is_static(argument)
+                    && matches!(expression_content(argument).as_str(), "ref_for" | "ref_key")
+            })
+        }
+        _ => false,
+    }
+}
+
+fn is_mounted_event_prop(prop: &PropNode<'_>) -> bool {
+    matches!(
+        prop,
+        PropNode::Directive(directive)
+            if directive.name.as_str() == "on"
+                && directive.arg.as_ref().is_some_and(|argument| {
+                    expression_is_static(argument) && expression_content(argument) == "mounted"
+                })
+    )
+}
+
 fn collect_event_modifier_diagnostics(
     source: &str,
     filename: &str,
@@ -1074,7 +1809,56 @@ fn collect_event_modifier_diagnostics(
                     }
                     _ => None,
                 }) {
+                    let Some(argument) = directive.arg.as_ref() else {
+                        diagnostics.push(source_diagnostic(
+                            source,
+                            filename,
+                            "SYRINX_RSX_UNSUPPORTED_EVENT_NAME",
+                            "Object-form v-on has no statically typed Dioxus event lowering.",
+                            template_start + directive.loc.start.offset as usize,
+                            template_start + directive.loc.end.offset as usize,
+                        ));
+                        continue;
+                    };
+                    if !expression_is_static(argument) {
+                        diagnostics.push(source_diagnostic(
+                            source,
+                            filename,
+                            "SYRINX_RSX_UNSUPPORTED_EVENT_NAME",
+                            "Dynamic event names have no statically typed Dioxus event lowering.",
+                            template_start + argument.loc().start.offset as usize,
+                            template_start + argument.loc().end.offset as usize,
+                        ));
+                        continue;
+                    }
+                    let event = expression_content(argument);
+                    if element.tag_type != ElementType::Component && event_type(&event).is_none() {
+                        diagnostics.push(source_diagnostic(
+                            source,
+                            filename,
+                            "SYRINX_RSX_UNSUPPORTED_EVENT_NAME",
+                            &format!(
+                                "Event `{event}` is not exposed by the Dioxus HTML event surface."
+                            ),
+                            template_start + argument.loc().start.offset as usize,
+                            template_start + argument.loc().end.offset as usize,
+                        ));
+                    }
                     for modifier in &directive.modifiers {
+                        if element.tag_type == ElementType::Component {
+                            let name = modifier.content.as_str();
+                            diagnostics.push(source_diagnostic(
+                                source,
+                                filename,
+                                "SYRINX_UNSUPPORTED_EVENT_MODIFIER",
+                                &format!(
+                                    "Event modifier .{name} has no typed custom-component event lowering."
+                                ),
+                                template_start + modifier.loc.start.offset as usize,
+                                template_start + modifier.loc.end.offset as usize,
+                            ));
+                            continue;
+                        }
                         if matches!(modifier.content.as_str(), "stop" | "prevent") {
                             continue;
                         }
@@ -1135,6 +1919,10 @@ fn expression_content(expression: &ExpressionNode<'_>) -> String {
     }
 }
 
+fn expression_is_static(expression: &ExpressionNode<'_>) -> bool {
+    matches!(expression, ExpressionNode::Simple(simple) if simple.is_static)
+}
+
 fn slot_name(element: &ElementNode<'_>) -> String {
     element
         .props
@@ -1157,18 +1945,56 @@ fn rsx_attribute_name(name: &str) -> String {
     }
 }
 
-fn event_type(event: &str) -> &'static str {
+fn event_type(event: &str) -> Option<&'static str> {
     match event {
-        "input" | "change" | "submit" | "reset" | "invalid" => "FormEvent",
-        "keydown" | "keypress" | "keyup" => "KeyboardEvent",
-        "focus" | "blur" | "focusin" | "focusout" => "FocusEvent",
-        "scroll" => "ScrollEvent",
-        "drag" | "dragend" | "dragenter" | "dragleave" | "dragover" | "dragstart" | "drop" => {
-            "DragEvent"
+        "animationstart" | "animationend" | "animationiteration" => Some("AnimationEvent"),
+        "beforeinput" => Some("BeforeInputEvent"),
+        "cancel" => Some("CancelEvent"),
+        "copy" | "cut" | "paste" => Some("ClipboardEvent"),
+        "compositionstart" | "compositionend" | "compositionupdate" => Some("CompositionEvent"),
+        "drag" | "dragend" | "dragenter" | "dragexit" | "dragleave" | "dragover" | "dragstart"
+        | "drop" => Some("DragEvent"),
+        "focus" | "blur" | "focusin" | "focusout" => Some("FocusEvent"),
+        "input" | "change" | "submit" | "reset" | "invalid" => Some("FormEvent"),
+        "error" | "load" => Some("ImageEvent"),
+        "keydown" | "keypress" | "keyup" => Some("KeyboardEvent"),
+        "abort" | "canplay" | "canplaythrough" | "durationchange" | "emptied" | "encrypted"
+        | "ended" | "loadeddata" | "loadedmetadata" | "loadstart" | "pause" | "play"
+        | "playing" | "progress" | "ratechange" | "seeked" | "seeking" | "stalled" | "suspend"
+        | "timeupdate" | "volumechange" | "waiting" => Some("MediaEvent"),
+        "mounted" => Some("MountedEvent"),
+        "click" | "contextmenu" | "dblclick" | "doubleclick" | "mousedown" | "mouseenter"
+        | "mouseleave" | "mousemove" | "mouseout" | "mouseover" | "mouseup" | "auxclick" => {
+            Some("MouseEvent")
         }
         "pointercancel" | "pointerdown" | "pointerenter" | "pointerleave" | "pointermove"
-        | "pointerout" | "pointerover" | "pointerup" => "PointerEvent",
-        _ => "MouseEvent",
+        | "pointerout" | "pointerover" | "pointerup" | "gotpointercapture"
+        | "lostpointercapture" => Some("PointerEvent"),
+        "resize" => Some("ResizeEvent"),
+        "scroll" | "scrollend" => Some("ScrollEvent"),
+        "select" | "selectstart" | "selectionchange" => Some("SelectionEvent"),
+        "toggle" | "beforetoggle" => Some("ToggleEvent"),
+        "touchstart" | "touchmove" | "touchend" | "touchcancel" => Some("TouchEvent"),
+        "transitionend" => Some("TransitionEvent"),
+        "visible" => Some("VisibleEvent"),
+        "wheel" => Some("WheelEvent"),
+        _ => None,
+    }
+}
+
+fn owned_render_value(value: &str) -> String {
+    let value = value.trim();
+    if value.ends_with(".clone()")
+        || value.ends_with(".to_owned()")
+        || value.ends_with(".to_string()")
+        || value.ends_with(".unwrap_or_default()")
+        || value.starts_with("format!(")
+        || value.starts_with("if ")
+        || value.starts_with("{ let ")
+    {
+        value.to_owned()
+    } else {
+        format!("({value}).clone()")
     }
 }
 

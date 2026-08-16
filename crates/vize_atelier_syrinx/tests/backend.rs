@@ -5,7 +5,7 @@ use oxc_parser::Parser;
 use oxc_span::SourceType;
 use sha2::{Digest, Sha256};
 use vize_atelier_syrinx::{
-    BindingKind, SyrinxCompileOptions, SyrinxRsxOptions, compile_syrinx, compile_syrinx_hybrid,
+    BindingKind, SyrinxCompileOptions, SyrinxRsxOptions, compile_syrinx, compile_syrinx_checked,
     compile_syrinx_rsx,
 };
 
@@ -147,7 +147,12 @@ fn v3b_emits_deterministic_explicit_rsx_without_the_v2_abi() {
     assert!(!first.rust_source.contains("pub attribute_1: String"));
     assert_eq!(
         first.css,
-        ".table { width: 100%; }\n.sparkle { color: gold; }"
+        ".table[data-v-syrinx-7de9e49b]{ width: 100%; }.sparkle[data-v-syrinx-7de9e49b]{ color: gold; }"
+    );
+    assert!(
+        first
+            .rust_source
+            .contains("\"data-v-syrinx-7de9e49b\": \"true\",")
     );
 }
 
@@ -194,17 +199,177 @@ fn rsx_event_modifiers_without_a_renderer_neutral_lowering_fail_closed() {
 }
 
 #[test]
+fn rsx_uses_exact_dioxus_event_types_and_rejects_unknown_names() {
+    let source = r#"<template><div @wheel="wheel" @touchstart="touch" @animationend="animated"></div></template>"#;
+    let artifact = compile_syrinx_rsx(source, rsx_options())
+        .expect("known Dioxus events should have exact handler types");
+    for event_type in ["WheelEvent", "TouchEvent", "AnimationEvent"] {
+        assert!(
+            artifact.rust_source.contains(event_type),
+            "{}",
+            artifact.rust_source
+        );
+    }
+
+    let error = compile_syrinx_rsx(
+        r#"<template><div @notarealevent="handler"></div></template>"#,
+        rsx_options(),
+    )
+    .expect_err("unknown event names must not fall back to MouseEvent");
+    assert!(
+        error
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "SYRINX_RSX_UNSUPPORTED_EVENT_NAME")
+    );
+}
+
+#[test]
+fn rsx_scoped_styles_rewrite_selectors_and_annotate_owned_elements() {
+    let source = r#"<template><section><p class="child pulse">scoped</p></section></template>
+<style scoped>.child { color: red; animation: pulse 1s; } .pulse { content: "pulse"; } @keyframes pulse { to { opacity: 1; } }</style>"#;
+    let artifact = compile_syrinx_rsx(source, rsx_options()).expect("scoped CSS should compile");
+    assert!(artifact.css.contains(".child[data-v-syrinx-"));
+    assert!(!artifact.css.contains(".child {"));
+    assert!(artifact.css.contains("@keyframes pulse-syrinx-"));
+    assert!(artifact.css.contains("animation: pulse-syrinx-"));
+    assert!(artifact.css.contains(".pulse[data-v-syrinx-"));
+    assert!(artifact.css.contains("content: \"pulse\""));
+    assert_eq!(artifact.rust_source.matches("\"data-v-syrinx-").count(), 2);
+
+    let global = compile_syrinx_rsx(
+        r#"<template><p class="child">global</p></template>
+<style>.child { color: red; }</style>"#,
+        rsx_options(),
+    )
+    .expect("global CSS should compile");
+    assert!(!global.css.contains("[data-v-syrinx-"));
+    assert!(!global.rust_source.contains("\"data-v-syrinx-"));
+
+    let boundary = compile_syrinx_rsx(
+        r#"<template><ChildCell /></template><style scoped>.child { color: red; }</style>"#,
+        rsx_options(),
+    )
+    .expect_err("scoped styles cannot silently skip a child component root");
+    assert!(
+        boundary
+            .diagnostics
+            .iter()
+            .any(|diagnostic| { diagnostic.code == "SYRINX_RSX_SCOPED_COMPONENT_BOUNDARY" })
+    );
+}
+
+#[test]
+fn dynamic_styles_and_prop_names_become_typed_render_model_fields() {
+    let source = r#"<script setup>
+const props = defineProps({ styles: Object, name: String, value: String })
+</script>
+<template><div :style="props.styles" :[props.name]="props.value" title="proof">dynamic</div></template>"#;
+    let artifact = compile_syrinx_checked(source, rsx_options())
+        .expect("dynamic style maps and prop names should lower without render JavaScript");
+    assert!(artifact.rsx.rust_source.contains("pub style_1: String"));
+    assert!(
+        artifact
+            .rsx
+            .rust_source
+            .contains("pub dynamic_attributes_2: Vec<Attribute>")
+    );
+    assert!(
+        artifact
+            .rsx
+            .rust_source
+            .contains("..model.dynamic_attributes_2.clone(),")
+    );
+    let title = artifact.rsx.rust_source.find("title: \"proof\",").unwrap();
+    let spread = artifact
+        .rsx
+        .rust_source
+        .find("..model.dynamic_attributes_2.clone(),")
+        .unwrap();
+    assert!(
+        title < spread,
+        "RSX spreads must follow ordinary attributes"
+    );
+    assert!(artifact.rsx.expression_hooks.iter().any(|hook| {
+        hook.role == "dynamic-attributes"
+            && hook.expression.contains("name: props.name")
+            && hook.expression.contains("value: props.value")
+    }));
+
+    let component_error = compile_syrinx_rsx(
+        r#"<template><ChildCell :[propName]="value" /></template>"#,
+        rsx_options(),
+    )
+    .expect_err("dynamic component keys cannot be checked against Rust Props");
+    assert!(
+        component_error.diagnostics.iter().any(|diagnostic| {
+            diagnostic.code == "SYRINX_RSX_DYNAMIC_COMPONENT_PROP_UNSUPPORTED"
+        })
+    );
+}
+
+#[test]
+fn template_refs_lower_to_mounted_data_signals_or_fail_when_collection_is_required() {
+    let source = r#"<script setup>
+import { ref } from 'vue'
+const element = ref(null)
+</script>
+<template><button ref="element">mounted</button></template>"#;
+    let artifact = compile_syrinx_checked(source, rsx_options())
+        .expect("one ordinary template ref should lower to onmounted");
+    assert!(artifact.rsx.rust_source.contains("use std::rc::Rc;"));
+    assert!(
+        artifact
+            .rsx
+            .rust_source
+            .contains("let mut element = use_signal(|| None::<Rc<MountedData>>);")
+    );
+    assert!(
+        artifact
+            .rsx
+            .rust_source
+            .contains("onmounted: move |event| element.set(Some(event.data())),")
+    );
+
+    let component_ref = source
+        .replace("<button ref=\"element\"", "<ChildCell ref=\"element\"")
+        .replace("</button>", "</ChildCell>");
+    let error = compile_syrinx_rsx(&component_ref, rsx_options())
+        .expect_err("component refs expose a different identity type");
+    assert!(
+        error
+            .diagnostics
+            .iter()
+            .any(|diagnostic| { diagnostic.code == "SYRINX_RSX_COMPONENT_REF_UNSUPPORTED" })
+    );
+
+    let repeated = source.replace(
+        "<button ref=\"element\">mounted</button>",
+        "<button v-for=\"item in items\" :key=\"item.id\" :ref=\"element\">mounted</button>",
+    );
+    let error = compile_syrinx_rsx(&repeated, rsx_options())
+        .expect_err("v-for refs need a collection lowering");
+    assert!(
+        error
+            .diagnostics
+            .iter()
+            .any(|diagnostic| { diagnostic.code == "SYRINX_RSX_TEMPLATE_REF_FOR_UNSUPPORTED" })
+    );
+}
+
+#[test]
 fn exact_canonical_sfc_compiles_through_rsx_and_stock_vapor_backends() {
     let source_hash = Sha256::digest(CANONICAL_TIME_TRAVEL_TABLE.as_bytes())
         .iter()
         .map(|byte| format!("{byte:02x}"))
         .collect::<String>();
     assert_eq!(source_hash, CANONICAL_TIME_TRAVEL_TABLE_SHA256);
-    let artifact = compile_syrinx_hybrid(CANONICAL_TIME_TRAVEL_TABLE, rsx_options())
+    let artifact = compile_syrinx_checked(CANONICAL_TIME_TRAVEL_TABLE, rsx_options())
         .expect("canonical SFC should compile through Syrinx RSX");
     assert_eq!(artifact.classification.summary.rejected_sites, 0);
-    assert_eq!(artifact.classification.summary.residual_render_sites, 0);
     assert_eq!(artifact.rsx.compiled_bindings, ["hovered", "rootClass"]);
+    assert!(!artifact.rsx.rust_source.contains(".clone().clone()"));
+    assert!(!artifact.rsx.rust_source.contains(".iter().enumerate()"));
     assert!(
         artifact.rsx.rust_source.contains("key: \"{item_1.id}\","),
         "v-for keys must remain dynamic Rust expressions"
@@ -235,18 +400,14 @@ fn exact_canonical_sfc_compiles_through_rsx_and_stock_vapor_backends() {
 }
 
 #[test]
-fn v3b_hybrid_emit_is_empty_for_the_fully_compiled_table() {
-    let artifact = compile_syrinx_hybrid(TABLE, rsx_options()).expect("table should classify");
-    assert!(artifact.residual_exports.is_empty());
-    assert_eq!(
-        artifact.residual_module,
-        "// @generated by vize_atelier_syrinx. Pure args-in/value-out residuals only.\nexport {};\n"
-    );
-    assert_javascript_module(&artifact.residual_module);
+fn checked_emit_contains_only_native_rsx_and_coverage() {
+    let artifact = compile_syrinx_checked(TABLE, rsx_options()).expect("table should classify");
+    assert_eq!(artifact.classification.summary.rejected_sites, 0);
+    assert!(artifact.rsx.rust_source.contains("rsx!"));
 }
 
 #[test]
-fn v3b_residual_exports_are_pure_functions_with_explicit_dependencies() {
+fn pure_unknown_calls_fail_with_a_named_native_lowering_diagnostic() {
     let source = r#"<script setup>
 const format = value => fancyFormat(value)
 const label = format('alpha')
@@ -254,24 +415,19 @@ const label = format('alpha')
 <template><p>{{ label }}</p></template>
 "#;
     let mut compile_options = rsx_options();
-    compile_options.filename = "ResidualLabel.vue".to_owned();
-    compile_options.component_name = Some("ResidualLabel".to_owned());
-    let artifact = compile_syrinx_hybrid(source, compile_options).expect("pure residuals compile");
-
-    assert!(!artifact.residual_exports.is_empty());
-    let format = artifact
-        .residual_exports
-        .iter()
-        .find(|export| export.role == "format")
-        .expect("format binding is residual");
-    assert_eq!(format.dependencies, ["fancyFormat"]);
-    assert!(artifact.residual_module.contains("(fancyFormat)"));
-    assert!(!artifact.residual_module.contains("document"));
-    assert_javascript_module(&artifact.residual_module);
+    compile_options.filename = "UnloweredLabel.vue".to_owned();
+    compile_options.component_name = Some("UnloweredLabel".to_owned());
+    let error = compile_syrinx_checked(source, compile_options)
+        .expect_err("an unlowered pure call must fail instead of becoming residual JavaScript");
+    assert!(error.diagnostics.iter().any(|diagnostic| {
+        diagnostic.code == "SYRINX_RSX_UNLOWERED_EXPRESSION"
+            && diagnostic.message.contains("fancyFormat")
+            && diagnostic.start_byte < diagnostic.end_byte
+    }));
 }
 
 #[test]
-fn v3b_residual_that_closes_over_reactive_state_names_the_binding_and_fails() {
+fn unlowered_reactive_call_names_the_binding_and_fails() {
     let source = r#"<script setup>
 import { ref } from 'vue'
 const count = ref(0)
@@ -280,14 +436,14 @@ const label = () => fancyFormat(count.value)
 <template><p>{{ label() }}</p></template>
 "#;
     let mut compile_options = rsx_options();
-    compile_options.filename = "RejectedResidual.vue".to_owned();
-    compile_options.component_name = Some("RejectedResidual".to_owned());
-    let error = compile_syrinx_hybrid(source, compile_options)
-        .expect_err("a residual reactive closure must fail");
+    compile_options.filename = "UnloweredReactive.vue".to_owned();
+    compile_options.component_name = Some("UnloweredReactive".to_owned());
+    let error = compile_syrinx_checked(source, compile_options)
+        .expect_err("an unlowered reactive closure must fail");
     assert!(error.diagnostics.iter().any(|diagnostic| {
-        diagnostic.code == "SYRINX_RSX_RESIDUAL_REJECTED"
+        diagnostic.code == "SYRINX_RSX_UNLOWERED_EXPRESSION"
             && diagnostic.message.contains("'label'")
-            && diagnostic.message.contains("reactive state")
+            && diagnostic.message.contains("unlowered call")
             && diagnostic.start_byte < diagnostic.end_byte
     }));
 }

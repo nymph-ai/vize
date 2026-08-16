@@ -3,9 +3,8 @@
 //! This is a classifier, not a second compiler. It asks the renderer-native
 //! RSX frontend for the exact authored dynamic sites, parses `<script
 //! setup>` with OXC, and reports whether each site fits the initial Rust
-//! expression subset, needs a pure residual JavaScript function, or must be
-//! rejected. The deterministic report is intended to be committed with the
-//! SFC it measures.
+//! expression subset or must be rejected. The deterministic report is
+//! intended to be committed with the SFC it measures.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -26,15 +25,13 @@ use vize_atelier_sfc::{SfcParseOptions, parse_sfc};
 
 use crate::{SyrinxCompileFailure, SyrinxDiagnostic, SyrinxRsxOptions, compile_syrinx_rsx};
 
-const MIN_RENDER_COMPILED_PERCENT: f64 = 80.0;
-const FORMAT: &str = "syrinx-v3b-rsx-coverage-v1";
+const FORMAT: &str = "syrinx-v3b-rsx-coverage-v2";
 
 /// Result for one authored setup binding or compiler-emitted dynamic site.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum RsxCoverageClass {
     CompiledRust,
-    ResidualJs,
     Rejected,
 }
 
@@ -44,14 +41,6 @@ pub enum RsxCoverageClass {
 pub enum RsxCoverageSiteKind {
     ScriptBinding,
     TemplateExpression,
-}
-
-/// GO/KILL output of the mandatory v3b gating experiment.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum RsxCoverageDecision {
-    Proceed,
-    Kill,
 }
 
 /// One source-located classification result.
@@ -64,8 +53,8 @@ pub struct RsxCoverageSite {
     pub classification: RsxCoverageClass,
     pub reason: String,
     pub dependencies: Vec<String>,
-    /// One unit means one possible JS call in a render. Setup and event-only
-    /// sites are zero because they do not create per-frame residual cost.
+    /// One unit means one render-time expression. Setup and event-only sites
+    /// are zero because they do not execute while constructing the render tree.
     pub render_weight: u32,
     pub start_byte: u32,
     pub end_byte: u32,
@@ -75,23 +64,21 @@ pub struct RsxCoverageSite {
     pub end_column: u32,
 }
 
-/// Aggregate counts used for the gate decision.
+/// Aggregate counts for native Rust compilation and explicit rejection.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RsxCoverageSummary {
     pub authored_sites: u32,
     pub compiled_sites: u32,
-    pub residual_sites: u32,
     pub rejected_sites: u32,
     pub render_sites: u32,
     pub compiled_render_sites: u32,
-    pub residual_render_sites: u32,
     pub rejected_render_sites: u32,
     pub authored_compiled_percent: f64,
     pub render_compiled_percent: f64,
 }
 
-/// Stable, machine-readable result of the v3b gating experiment.
+/// Stable, machine-readable result of v3b native-lowering classification.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RsxCoverageReport {
@@ -101,8 +88,6 @@ pub struct RsxCoverageReport {
     pub compiler_version: String,
     pub compiler_revision: String,
     pub classifier_revision: String,
-    pub minimum_render_compiled_percent: f64,
-    pub decision: RsxCoverageDecision,
     pub summary: RsxCoverageSummary,
     pub sites: Vec<RsxCoverageSite>,
 }
@@ -207,12 +192,6 @@ pub fn measure_rsx_coverage(
         .map(|binding| binding.site.role.clone())
         .collect::<BTreeSet<_>>();
     let known_bindings = binding_classes.keys().cloned().collect::<BTreeSet<_>>();
-    let reactive_bindings = bindings
-        .iter()
-        .filter(|binding| binding.reactive)
-        .map(|binding| binding.site.role.clone())
-        .collect::<BTreeSet<_>>();
-
     let mut sites = bindings
         .into_iter()
         .map(|binding| binding.site)
@@ -220,13 +199,8 @@ pub fn measure_rsx_coverage(
     for hook in &artifact.expression_hooks {
         let expression = hook.expression.trim().to_owned();
         let features = expression_features(&expression);
-        let (mut classification, mut reason, dependencies) = classify_features(
-            &features,
-            &known_bindings,
-            &reactive_bindings,
-            &binding_classes,
-            false,
-        );
+        let (mut classification, mut reason, dependencies) =
+            classify_features(&features, &known_bindings, &binding_classes);
         if classification == RsxCoverageClass::Rejected
             && !hook.field.starts_with("native_")
             && !dependencies.is_empty()
@@ -261,14 +235,6 @@ pub fn measure_rsx_coverage(
     });
 
     let summary = summarize(&sites);
-    let decision = if summary.render_sites > 0
-        && summary.render_compiled_percent >= MIN_RENDER_COMPILED_PERCENT
-        && summary.rejected_sites == 0
-    {
-        RsxCoverageDecision::Proceed
-    } else {
-        RsxCoverageDecision::Kill
-    };
     Ok(RsxCoverageReport {
         format: FORMAT.to_owned(),
         source: filename,
@@ -276,8 +242,6 @@ pub fn measure_rsx_coverage(
         compiler_version: env!("CARGO_PKG_VERSION").to_owned(),
         compiler_revision,
         classifier_revision: "library-call".to_owned(),
-        minimum_render_compiled_percent: MIN_RENDER_COMPILED_PERCENT,
-        decision,
         summary,
         sites,
     })
@@ -368,22 +332,12 @@ fn classify_bindings(bindings: &mut [BindingAnalysis]) {
         .iter()
         .map(|binding| binding.site.role.clone())
         .collect::<BTreeSet<_>>();
-    let reactive = bindings
-        .iter()
-        .filter(|binding| binding.reactive)
-        .map(|binding| binding.site.role.clone())
-        .collect::<BTreeSet<_>>();
     let mut classes = BTreeMap::new();
     for _ in 0..=bindings.len() {
         let before = classes.clone();
         for binding in bindings.iter_mut() {
-            let (classification, reason, dependencies) = classify_features(
-                &binding.features,
-                &known,
-                &reactive,
-                &classes,
-                binding.reactive,
-            );
+            let (classification, reason, dependencies) =
+                classify_features(&binding.features, &known, &classes);
             binding.site.classification = classification;
             binding.site.reason = reason;
             binding.site.dependencies = dependencies;
@@ -398,9 +352,7 @@ fn classify_bindings(bindings: &mut [BindingAnalysis]) {
 fn classify_features(
     features: &Features,
     known_bindings: &BTreeSet<String>,
-    reactive_bindings: &BTreeSet<String>,
     binding_classes: &BTreeMap<String, RsxCoverageClass>,
-    own_reactive: bool,
 ) -> (RsxCoverageClass, String, Vec<String>) {
     let dependencies = features
         .identifiers
@@ -450,24 +402,7 @@ fn classify_features(
         })
         .cloned()
         .collect::<Vec<_>>();
-    let residual_dependency = dependencies
-        .iter()
-        .any(|dependency| binding_classes.get(dependency) == Some(&RsxCoverageClass::ResidualJs));
-    let needs_residual =
-        !features.unsupported.is_empty() || !unknown_calls.is_empty() || residual_dependency;
-    if needs_residual {
-        let closes_over_reactive = own_reactive
-            || dependencies
-                .iter()
-                .any(|dependency| reactive_bindings.contains(dependency));
-        if closes_over_reactive {
-            return (
-                RsxCoverageClass::Rejected,
-                "residual JavaScript would close over reactive state instead of receiving explicit arguments"
-                    .to_owned(),
-                dependencies,
-            );
-        }
+    if !features.unsupported.is_empty() || !unknown_calls.is_empty() {
         let mut reasons = Vec::new();
         if !features.unsupported.is_empty() {
             reasons.push(format!(
@@ -481,16 +416,9 @@ fn classify_features(
             ));
         }
         if !unknown_calls.is_empty() {
-            reasons.push(format!("unlowered pure call: {}", unknown_calls.join(", ")));
+            reasons.push(format!("unlowered call: {}", unknown_calls.join(", ")));
         }
-        if residual_dependency {
-            reasons.push("depends on a pure residual binding".to_owned());
-        }
-        return (
-            RsxCoverageClass::ResidualJs,
-            reasons.join("; "),
-            dependencies,
-        );
+        return (RsxCoverageClass::Rejected, reasons.join("; "), dependencies);
     }
     (
         RsxCoverageClass::CompiledRust,
@@ -576,8 +504,10 @@ fn source_site(
 
 fn render_weight(role: &str) -> u32 {
     u32::from(
-        matches!(role, "text" | "condition" | "list" | "slot")
-            || role.starts_with("attribute:")
+        matches!(
+            role,
+            "text" | "condition" | "list" | "slot" | "style" | "dynamic-attributes"
+        ) || role.starts_with("attribute:")
             || role.starts_with("binding:")
             || role.starts_with("if:")
             || role.starts_with("list:")
@@ -589,20 +519,16 @@ fn render_weight(role: &str) -> u32 {
 fn summarize(sites: &[RsxCoverageSite]) -> RsxCoverageSummary {
     let authored_sites = sites.len() as u32;
     let compiled_sites = count_sites(sites, RsxCoverageClass::CompiledRust);
-    let residual_sites = count_sites(sites, RsxCoverageClass::ResidualJs);
     let rejected_sites = count_sites(sites, RsxCoverageClass::Rejected);
     let render_sites = sites.iter().map(|site| site.render_weight).sum::<u32>();
     let compiled_render_sites = weighted_sites(sites, RsxCoverageClass::CompiledRust);
-    let residual_render_sites = weighted_sites(sites, RsxCoverageClass::ResidualJs);
     let rejected_render_sites = weighted_sites(sites, RsxCoverageClass::Rejected);
     RsxCoverageSummary {
         authored_sites,
         compiled_sites,
-        residual_sites,
         rejected_sites,
         render_sites,
         compiled_render_sites,
-        residual_render_sites,
         rejected_render_sites,
         authored_compiled_percent: percentage(compiled_sites, authored_sites),
         render_compiled_percent: percentage(compiled_render_sites, render_sites),
@@ -717,11 +643,9 @@ const choose = id => { selected.value = id }
     }
 
     #[test]
-    fn table_is_a_compiled_majority_with_no_residual_render_calls() {
+    fn table_is_fully_compiled_with_no_rejections() {
         let report = measure_rsx_coverage(TABLE, options()).unwrap();
-        assert_eq!(report.decision, RsxCoverageDecision::Proceed);
         assert_eq!(report.summary.render_compiled_percent, 100.0);
-        assert_eq!(report.summary.residual_render_sites, 0);
         assert_eq!(report.summary.rejected_sites, 0);
         assert!(report.sites.iter().any(|site| site.role == "rootClass"));
         assert!(
@@ -733,16 +657,11 @@ const choose = id => { selected.value = id }
     }
 
     #[test]
-    fn pure_unknown_calls_are_residual_but_reactive_closures_are_rejected() {
+    fn unknown_calls_are_rejected_even_when_they_are_pure() {
         let pure = expression_features("Intl.NumberFormat('en').format(value)");
         let known = BTreeSet::from(["value".to_owned()]);
-        let (class, _, dependencies) =
-            classify_features(&pure, &known, &BTreeSet::new(), &BTreeMap::new(), false);
-        assert_eq!(class, RsxCoverageClass::ResidualJs);
-        assert_eq!(dependencies, ["value"]);
-
-        let (class, reason, _) = classify_features(&pure, &known, &known, &BTreeMap::new(), false);
+        let (class, _, dependencies) = classify_features(&pure, &known, &BTreeMap::new());
         assert_eq!(class, RsxCoverageClass::Rejected);
-        assert!(reason.contains("reactive state"));
+        assert_eq!(dependencies, ["value"]);
     }
 }
