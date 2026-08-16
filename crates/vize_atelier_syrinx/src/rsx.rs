@@ -691,13 +691,11 @@ impl RsxEmitter {
                     );
                     let name = rsx_attribute_name(&name);
                     if name == "key" {
-                        // Dioxus keys must be Rust expressions. Formatting the
-                        // expression into a string makes every loop iteration
-                        // share the literal template when `value` contains a
-                        // field access (for example `item_1.id.clone()`), which
-                        // corrupts keyed reconciliation as rows disappear and
-                        // reappear during replay.
-                        self.line(&format!("key: ({value}).clone(),"));
+                        // Dioxus requires keys to be formatted strings. Avoid
+                        // cloning inside the interpolation: the loop item is
+                        // already borrowed and Display only needs a reference.
+                        let value = value.strip_suffix(".clone()").unwrap_or(&value);
+                        self.line(&format!("key: \"{{{value}}}\","));
                     } else {
                         self.line(&format!("{name}: ({value}).clone(),"));
                     }
