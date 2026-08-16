@@ -16,6 +16,7 @@ mod compiler;
 mod coverage;
 mod diagnostic;
 mod guest;
+mod hybrid;
 mod model;
 mod rsx;
 
@@ -28,5 +29,6 @@ pub use coverage::{
     RsxCoverageSummary, measure_rsx_coverage,
 };
 pub use diagnostic::{SyrinxCompileFailure, SyrinxDiagnostic};
+pub use hybrid::{ResidualExport, SyrinxHybridArtifact, compile_syrinx_hybrid};
 pub use model::*;
 pub use rsx::{RsxExpressionHook, SyrinxRsxArtifact, compile_syrinx_rsx};
