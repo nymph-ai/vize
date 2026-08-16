@@ -101,6 +101,7 @@ fn v3b_emits_deterministic_explicit_rsx_without_the_v2_abi() {
         "if selected.read().is_some()",
         "onmouseenter:",
         "onclick:",
+        "event.stop_propagation();",
     ] {
         assert!(
             first.rust_source.contains(required),
@@ -148,6 +149,48 @@ fn v3b_emits_deterministic_explicit_rsx_without_the_v2_abi() {
         first.css,
         ".table { width: 100%; }\n.sparkle { color: gold; }"
     );
+}
+
+#[test]
+fn rsx_event_stop_and_prevent_wrap_the_handler_before_dispatch() {
+    let source = r#"<template>
+  <a href="/next" @click.stop.prevent="choose">next</a>
+</template>
+"#;
+    let artifact = compile_syrinx_rsx(source, rsx_options())
+        .expect("stop and prevent have renderer-neutral Dioxus lowerings");
+    let emitted = &artifact.rust_source;
+    let stop = emitted
+        .find("event.stop_propagation();")
+        .expect(".stop must stop bubbling");
+    let prevent = emitted
+        .find("event.prevent_default();")
+        .expect(".prevent must prevent the default action");
+    let dispatch = emitted
+        .find("handler(event);")
+        .expect("the authored handler must still run");
+    assert!(stop < prevent && prevent < dispatch, "{emitted}");
+}
+
+#[test]
+fn rsx_event_modifiers_without_a_renderer_neutral_lowering_fail_closed() {
+    for modifier in ["self", "once", "capture", "passive", "enter", "foo"] {
+        let source =
+            format!("<template><button @click.{modifier}=\"choose\">go</button></template>");
+        let error = compile_syrinx_rsx(&source, rsx_options())
+            .expect_err("unsupported and unknown modifiers must not be silently dropped");
+        let diagnostic = error
+            .diagnostics
+            .iter()
+            .find(|diagnostic| diagnostic.code == "SYRINX_UNSUPPORTED_EVENT_MODIFIER")
+            .unwrap_or_else(|| panic!("missing modifier diagnostic for .{modifier}: {error}"));
+        assert!(diagnostic.message.contains(&format!(".{modifier}")));
+        assert!(diagnostic.start_byte < diagnostic.end_byte);
+        assert_eq!(
+            &source[diagnostic.start_byte as usize..diagnostic.end_byte as usize],
+            modifier
+        );
+    }
 }
 
 #[test]

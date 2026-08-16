@@ -318,6 +318,17 @@ pub fn compile_syrinx_rsx(
         }));
         return Err(SyrinxCompileFailure { diagnostics });
     }
+    let modifier_diagnostics = validate_event_modifiers(
+        source,
+        &options.filename,
+        template.loc.start,
+        &lowered.root.children,
+    );
+    if !modifier_diagnostics.is_empty() {
+        return Err(SyrinxCompileFailure {
+            diagnostics: modifier_diagnostics,
+        });
+    }
     let component_name = options
         .component_name
         .clone()
@@ -723,7 +734,34 @@ impl RsxEmitter {
                             .map(ExpressionNode::loc)
                             .unwrap_or(&directive.loc),
                     );
-                    self.line(&format!("on{}: {value},", rust_ident(&event)));
+                    let stop = directive
+                        .modifiers
+                        .iter()
+                        .any(|modifier| modifier.content.as_str() == "stop");
+                    let prevent = directive
+                        .modifiers
+                        .iter()
+                        .any(|modifier| modifier.content.as_str() == "prevent");
+                    if stop || prevent {
+                        self.line(&format!("on{}: {{", rust_ident(&event)));
+                        self.indent += 1;
+                        self.line(&format!("let handler = {value};"));
+                        self.line("move |event| {");
+                        self.indent += 1;
+                        if stop {
+                            self.line("event.stop_propagation();");
+                        }
+                        if prevent {
+                            self.line("event.prevent_default();");
+                        }
+                        self.line("handler(event);");
+                        self.indent -= 1;
+                        self.line("}");
+                        self.indent -= 1;
+                        self.line("},");
+                    } else {
+                        self.line(&format!("on{}: {value},", rust_ident(&event)));
+                    }
                 }
                 PropNode::Directive(_) => {}
             }
@@ -1000,6 +1038,93 @@ impl RsxEmitter {
         }
         self.body.push_str(line);
         self.body.push('\n');
+    }
+}
+
+fn validate_event_modifiers(
+    source: &str,
+    filename: &str,
+    template_start: usize,
+    children: &[TemplateChildNode<'_>],
+) -> Vec<SyrinxDiagnostic> {
+    let mut diagnostics = Vec::new();
+    collect_event_modifier_diagnostics(
+        source,
+        filename,
+        template_start,
+        children,
+        &mut diagnostics,
+    );
+    diagnostics
+}
+
+fn collect_event_modifier_diagnostics(
+    source: &str,
+    filename: &str,
+    template_start: usize,
+    children: &[TemplateChildNode<'_>],
+    diagnostics: &mut Vec<SyrinxDiagnostic>,
+) {
+    for child in children {
+        match child {
+            TemplateChildNode::Element(element) => {
+                for directive in element.props.iter().filter_map(|prop| match prop {
+                    PropNode::Directive(directive) if directive.name.as_str() == "on" => {
+                        Some(directive)
+                    }
+                    _ => None,
+                }) {
+                    for modifier in &directive.modifiers {
+                        if matches!(modifier.content.as_str(), "stop" | "prevent") {
+                            continue;
+                        }
+                        let name = modifier.content.as_str();
+                        let message = if name == "self" {
+                            "Event modifier .self requires target/current-target identity, which renderer-neutral Dioxus events do not expose."
+                                .to_owned()
+                        } else {
+                            format!(
+                                "Event modifier .{name} has no renderer-neutral Dioxus RSX lowering."
+                            )
+                        };
+                        diagnostics.push(source_diagnostic(
+                            source,
+                            filename,
+                            "SYRINX_UNSUPPORTED_EVENT_MODIFIER",
+                            &message,
+                            template_start + modifier.loc.start.offset as usize,
+                            template_start + modifier.loc.end.offset as usize,
+                        ));
+                    }
+                }
+                collect_event_modifier_diagnostics(
+                    source,
+                    filename,
+                    template_start,
+                    &element.children,
+                    diagnostics,
+                );
+            }
+            TemplateChildNode::If(node) => {
+                for branch in &node.branches {
+                    collect_event_modifier_diagnostics(
+                        source,
+                        filename,
+                        template_start,
+                        &branch.children,
+                        diagnostics,
+                    );
+                }
+            }
+            TemplateChildNode::For(node) => collect_event_modifier_diagnostics(
+                source,
+                filename,
+                template_start,
+                &node.children,
+                diagnostics,
+            ),
+            _ => {}
+        }
     }
 }
 
