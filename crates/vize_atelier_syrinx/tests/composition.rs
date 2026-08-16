@@ -5,7 +5,7 @@ use oxc_parser::Parser;
 use oxc_span::SourceType;
 use vize_atelier_syrinx::{
     SyrinxCompileOptions, SyrinxComponentLink, SyrinxProgramSource, compile_syrinx,
-    compile_syrinx_program,
+    compile_syrinx_program, compile_syrinx_rsx,
 };
 
 const CHILD: &str = r#"
@@ -179,6 +179,34 @@ fn static_child_and_scoped_slot_lower_to_owner_mount_composition() {
     assert!(program.guest_module.contains("const __syrinxDefinition2"));
     assert!(!program.guest_module.contains("./ChildCell.vue"));
     assert_javascript_module(&program.guest_module);
+}
+
+#[test]
+fn v3b_rsx_keeps_components_and_slots_as_rust_tree_structure() {
+    let child = compile_syrinx_rsx(CHILD, options("ChildCell.vue", 2))
+        .expect("slot outlet should compile to a typed Element field");
+    assert!(child.rust_source.contains("pub slot_"));
+    assert!(child.rust_source.contains(": Element,"));
+    assert!(!child.rust_source.contains("__installSlotOutlet"));
+
+    let mut root_options = options("RootCell.vue", 1);
+    root_options.component_links = BTreeMap::from([(
+        "ChildCell".to_owned(),
+        SyrinxComponentLink {
+            definition_id: 2,
+            slot_outlets: BTreeMap::from([("cell".to_owned(), 1)]),
+        },
+    )]);
+    let root = compile_syrinx_rsx(ROOT, root_options)
+        .expect("linked child and scoped slot should compile to RSX");
+    assert!(root.rust_source.contains("ChildCell {"));
+    assert!(root.rust_source.contains("strong {"));
+    assert!(!root.rust_source.contains("child_definition"));
+    assert!(
+        root.expression_hooks
+            .iter()
+            .all(|hook| hook.start_byte < hook.end_byte)
+    );
 }
 
 #[test]

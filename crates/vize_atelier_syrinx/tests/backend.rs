@@ -4,7 +4,7 @@ use oxc_allocator::Allocator;
 use oxc_parser::Parser;
 use oxc_span::SourceType;
 use sha2::{Digest, Sha256};
-use vize_atelier_syrinx::{BindingKind, SyrinxCompileOptions, compile_syrinx};
+use vize_atelier_syrinx::{BindingKind, SyrinxCompileOptions, compile_syrinx, compile_syrinx_rsx};
 
 const TABLE: &str = r#"<script setup>
 import { computed, ref } from 'vue'
@@ -63,6 +63,59 @@ fn assert_javascript_module(source: &str) {
         parsed.diagnostics.is_empty(),
         "guest module did not parse: {:?}\n\n{source}",
         parsed.diagnostics
+    );
+}
+
+#[test]
+fn v3b_emits_deterministic_explicit_rsx_without_the_v2_abi() {
+    let first = compile_syrinx_rsx(TABLE, options()).expect("table SFC should compile to RSX");
+    let second = compile_syrinx_rsx(TABLE, options()).expect("repeat RSX compilation should work");
+
+    assert_eq!(first, second, "identical inputs must be byte deterministic");
+    assert_eq!(first.component_name, "TimeTravelTable");
+    for required in [
+        "pub struct TimeTravelTableModel",
+        "pub struct TimeTravelTableList1Item",
+        "pub fn TimeTravelTable",
+        "rsx! {",
+        "section {",
+        "table {",
+        "for item_1 in model.list_1.iter() {",
+        "key:",
+        "if model.condition_",
+        "onmouseenter:",
+        "onclick:",
+    ] {
+        assert!(
+            first.rust_source.contains(required),
+            "RSX artifact missed {required:?}:\n{}",
+            first.rust_source
+        );
+    }
+    for forbidden in [
+        "guest.mjs",
+        "ComponentPlan",
+        "protocol",
+        "NodeId",
+        "querySelector",
+        "dangerous_inner_html",
+    ] {
+        assert!(
+            !first.rust_source.contains(forbidden),
+            "RSX artifact retained forbidden v2 token {forbidden:?}"
+        );
+    }
+    assert!(
+        first
+            .expression_hooks
+            .iter()
+            .any(|hook| hook.role == "list" && hook.expression.contains("props.rows"))
+    );
+    assert!(
+        first
+            .expression_hooks
+            .iter()
+            .any(|hook| hook.role == "event:click")
     );
 }
 

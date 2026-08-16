@@ -17,6 +17,7 @@ mod coverage;
 mod diagnostic;
 mod guest;
 mod model;
+mod rsx;
 
 pub use compiler::{
     SyrinxCompileOptions, SyrinxComponentLink, SyrinxProgramSource, compile_syrinx,
@@ -28,3 +29,4 @@ pub use coverage::{
 };
 pub use diagnostic::{SyrinxCompileFailure, SyrinxDiagnostic};
 pub use model::*;
+pub use rsx::{RsxExpressionHook, SyrinxRsxArtifact, compile_syrinx_rsx};
