@@ -380,7 +380,11 @@ impl RsxEmitter {
                             .unwrap_or(&directive.loc),
                     );
                     let name = rsx_attribute_name(&name);
-                    self.line(&format!("{name}: {value}.clone(),"));
+                    if name == "key" {
+                        self.line(&format!("key: \"{{{value}}}\","));
+                    } else {
+                        self.line(&format!("{name}: {value}.clone(),"));
+                    }
                 }
                 PropNode::Directive(directive) if directive.name.as_str() == "on" => {
                     let event = directive
