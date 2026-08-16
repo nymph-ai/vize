@@ -2,7 +2,7 @@ use std::env;
 use std::fs;
 use std::process::ExitCode;
 
-use vize_atelier_syrinx::{SyrinxCompileOptions, measure_rsx_coverage};
+use vize_atelier_syrinx::{SyrinxRsxOptions, measure_rsx_coverage};
 
 fn main() -> ExitCode {
     let mut args = env::args().skip(1);
@@ -22,15 +22,13 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
-    let options = SyrinxCompileOptions {
+    let options = SyrinxRsxOptions {
         filename: input.clone(),
         component_name: input
             .rsplit('/')
             .next()
             .and_then(|name| name.strip_suffix(".vue"))
             .map(str::to_owned),
-        component_id: 100,
-        protocol_schema_sha256: "0".repeat(64),
         ..Default::default()
     };
     let mut report = match measure_rsx_coverage(&source, options) {

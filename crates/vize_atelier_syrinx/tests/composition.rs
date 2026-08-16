@@ -4,8 +4,8 @@ use oxc_allocator::Allocator;
 use oxc_parser::Parser;
 use oxc_span::SourceType;
 use vize_atelier_syrinx::{
-    SyrinxCompileOptions, SyrinxComponentLink, SyrinxProgramSource, compile_syrinx,
-    compile_syrinx_program, compile_syrinx_rsx,
+    SyrinxCompileOptions, SyrinxComponentLink, SyrinxProgramSource, SyrinxRsxOptions,
+    compile_syrinx, compile_syrinx_program, compile_syrinx_rsx,
 };
 
 const CHILD: &str = r#"
@@ -86,6 +86,13 @@ fn options(filename: &str, component_id: u32) -> SyrinxCompileOptions {
         filename: filename.to_owned(),
         component_id,
         protocol_schema_sha256: "a".repeat(64),
+        ..Default::default()
+    }
+}
+
+fn rsx_options(filename: &str) -> SyrinxRsxOptions {
+    SyrinxRsxOptions {
+        filename: filename.to_owned(),
         ..Default::default()
     }
 }
@@ -183,21 +190,13 @@ fn static_child_and_scoped_slot_lower_to_owner_mount_composition() {
 
 #[test]
 fn v3b_rsx_keeps_components_and_slots_as_rust_tree_structure() {
-    let child = compile_syrinx_rsx(CHILD, options("ChildCell.vue", 2))
+    let child = compile_syrinx_rsx(CHILD, rsx_options("ChildCell.vue"))
         .expect("slot outlet should compile to a typed Element field");
     assert!(child.rust_source.contains("pub slot_"));
     assert!(child.rust_source.contains(": Element,"));
     assert!(!child.rust_source.contains("__installSlotOutlet"));
 
-    let mut root_options = options("RootCell.vue", 1);
-    root_options.component_links = BTreeMap::from([(
-        "ChildCell".to_owned(),
-        SyrinxComponentLink {
-            definition_id: 2,
-            slot_outlets: BTreeMap::from([("cell".to_owned(), 1)]),
-        },
-    )]);
-    let root = compile_syrinx_rsx(ROOT, root_options)
+    let root = compile_syrinx_rsx(ROOT, rsx_options("RootCell.vue"))
         .expect("linked child and scoped slot should compile to RSX");
     assert!(root.rust_source.contains("ChildCell {"));
     assert!(root.rust_source.contains("strong {"));

@@ -1,7 +1,7 @@
 //! Fail-closed coverage measurement for the v3b Vue-to-RSX compiler target.
 //!
-//! This is a classifier, not a second compiler. It asks the existing Vize
-//! Syrinx frontend for the exact authored dynamic sites, parses `<script
+//! This is a classifier, not a second compiler. It asks the renderer-native
+//! RSX frontend for the exact authored dynamic sites, parses `<script
 //! setup>` with OXC, and reports whether each site fits the initial Rust
 //! expression subset, needs a pure residual JavaScript function, or must be
 //! rejected. The deterministic report is intended to be committed with the
@@ -24,7 +24,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use vize_atelier_sfc::{SfcParseOptions, parse_sfc};
 
-use crate::{SyrinxCompileFailure, SyrinxCompileOptions, compile_syrinx};
+use crate::{SyrinxCompileFailure, SyrinxDiagnostic, SyrinxRsxOptions, compile_syrinx_rsx};
 
 const MIN_RENDER_COMPILED_PERCENT: f64 = 80.0;
 const FORMAT: &str = "syrinx-v3b-rsx-coverage-v1";
@@ -156,15 +156,16 @@ impl<'a> Visit<'a> for FeatureVisitor {
 
 /// Measure whether one ordinary Vue SFC is a viable v3b compiler target.
 ///
-/// The existing Syrinx frontend remains authoritative for SFC/template
+/// The renderer-native RSX frontend remains authoritative for SFC/template
 /// parsing and source spans. A source outside that profile fails rather than
 /// being assigned an optimistic coverage ratio.
 pub fn measure_rsx_coverage(
     source: &str,
-    options: SyrinxCompileOptions,
+    options: SyrinxRsxOptions,
 ) -> Result<RsxCoverageReport, SyrinxCompileFailure> {
     let filename = options.filename.clone();
-    let artifacts = compile_syrinx(source, options)?;
+    let compiler_revision = options.compiler_revision.clone();
+    let artifact = compile_syrinx_rsx(source, options)?;
     let descriptor = parse_sfc(
         source,
         SfcParseOptions {
@@ -173,14 +174,38 @@ pub fn measure_rsx_coverage(
             ..Default::default()
         },
     )
-    .expect("compile_syrinx already accepted this SFC");
+    .map_err(|error| coverage_sfc_failure(source, &filename, error))?;
 
     let mut bindings = analyze_bindings(source, &descriptor);
     classify_bindings(&mut bindings);
+    let template_identifiers = artifact
+        .expression_hooks
+        .iter()
+        .flat_map(|hook| expression_features(&hook.expression).identifiers)
+        .collect::<BTreeSet<_>>();
+    for binding in &mut bindings {
+        let role = binding.site.role.as_str();
+        let is_external_props = binding.site.expression.starts_with("defineProps");
+        if binding.reactive
+            && template_identifiers.contains(role)
+            && !is_external_props
+            && !artifact.compiled_bindings.iter().any(|name| name == role)
+        {
+            binding.site.classification = RsxCoverageClass::Rejected;
+            binding.site.reason =
+                "reactive binding has no native Rust lowering for this authored expression"
+                    .to_owned();
+        }
+    }
     let binding_classes = bindings
         .iter()
         .map(|binding| (binding.site.role.clone(), binding.site.classification))
         .collect::<BTreeMap<_, _>>();
+    let external_bindings = bindings
+        .iter()
+        .filter(|binding| binding.site.expression.starts_with("defineProps"))
+        .map(|binding| binding.site.role.clone())
+        .collect::<BTreeSet<_>>();
     let known_bindings = binding_classes.keys().cloned().collect::<BTreeSet<_>>();
     let reactive_bindings = bindings
         .iter()
@@ -188,47 +213,44 @@ pub fn measure_rsx_coverage(
         .map(|binding| binding.site.role.clone())
         .collect::<BTreeSet<_>>();
 
-    let spans = artifacts
-        .source_map
-        .spans
-        .iter()
-        .map(|span| (span.id, span))
-        .collect::<BTreeMap<_, _>>();
     let mut sites = bindings
         .into_iter()
         .map(|binding| binding.site)
         .collect::<Vec<_>>();
-    for (role, span_id) in &artifacts.source_map.guest_expression_spans {
-        let span = spans
-            .get(span_id)
-            .expect("every guest expression span must be registered");
-        let expression = source
-            .get(span.start_byte as usize..span.end_byte as usize)
-            .unwrap_or("")
-            .trim()
-            .to_owned();
+    for hook in &artifact.expression_hooks {
+        let expression = hook.expression.trim().to_owned();
         let features = expression_features(&expression);
-        let (classification, reason, dependencies) = classify_features(
+        let (mut classification, mut reason, dependencies) = classify_features(
             &features,
             &known_bindings,
             &reactive_bindings,
             &binding_classes,
             false,
         );
+        if classification == RsxCoverageClass::Rejected
+            && !hook.field.starts_with("native_")
+            && !dependencies.is_empty()
+            && dependencies
+                .iter()
+                .all(|dependency| external_bindings.contains(dependency))
+        {
+            classification = RsxCoverageClass::CompiledRust;
+            reason = "external reactive input is an explicit typed render-model field".to_owned();
+        }
         sites.push(RsxCoverageSite {
             kind: RsxCoverageSiteKind::TemplateExpression,
-            role: role.clone(),
+            role: hook.role.clone(),
             expression,
             classification,
             reason,
             dependencies,
-            render_weight: render_weight(role),
-            start_byte: span.start_byte,
-            end_byte: span.end_byte,
-            start_line: span.start_line,
-            start_column: span.start_column,
-            end_line: span.end_line,
-            end_column: span.end_column,
+            render_weight: render_weight(&hook.role),
+            start_byte: hook.start_byte,
+            end_byte: hook.end_byte,
+            start_line: line_column(source, hook.start_byte as usize).0,
+            start_column: line_column(source, hook.start_byte as usize).1,
+            end_line: line_column(source, hook.end_byte as usize).0,
+            end_column: line_column(source, hook.end_byte as usize).1,
         });
     }
     sites.sort_by(|left, right| {
@@ -252,7 +274,7 @@ pub fn measure_rsx_coverage(
         source: filename,
         source_sha256: sha256(source.as_bytes()),
         compiler_version: env!("CARGO_PKG_VERSION").to_owned(),
-        compiler_revision: artifacts.manifest.vize_revision,
+        compiler_revision,
         classifier_revision: "library-call".to_owned(),
         minimum_render_compiled_percent: MIN_RENDER_COMPILED_PERCENT,
         decision,
@@ -553,16 +575,15 @@ fn source_site(
 }
 
 fn render_weight(role: &str) -> u32 {
-    if role.starts_with("binding:")
-        || role.starts_with("if:")
-        || role.starts_with("list:")
-        || role.starts_with("child:")
-        || role.starts_with("slot:")
-    {
-        1
-    } else {
-        0
-    }
+    u32::from(
+        matches!(role, "text" | "condition" | "list" | "slot")
+            || role.starts_with("attribute:")
+            || role.starts_with("binding:")
+            || role.starts_with("if:")
+            || role.starts_with("list:")
+            || role.starts_with("child:")
+            || role.starts_with("slot:"),
+    )
 }
 
 fn summarize(sites: &[RsxCoverageSite]) -> RsxCoverageSummary {
@@ -618,6 +639,35 @@ fn site_kind_order(kind: RsxCoverageSiteKind) -> u8 {
     }
 }
 
+fn coverage_sfc_failure(
+    source: &str,
+    filename: &str,
+    error: vize_atelier_sfc::SfcError,
+) -> SyrinxCompileFailure {
+    let (start, end) = error
+        .loc
+        .as_ref()
+        .map_or((0, source.len()), |loc| (loc.start, loc.end));
+    let (start_line, start_column) = line_column(source, start);
+    let (end_line, end_column) = line_column(source, end);
+    SyrinxCompileFailure {
+        diagnostics: vec![SyrinxDiagnostic {
+            code: error.code.map_or_else(
+                || "SYRINX_RSX_SFC_PARSE".to_owned(),
+                |code| code.to_string(),
+            ),
+            message: error.message.to_string(),
+            source: filename.to_owned(),
+            start_byte: start as u32,
+            end_byte: end as u32,
+            start_line,
+            start_column,
+            end_line,
+            end_column,
+        }],
+    }
+}
+
 fn line_column(source: &str, offset: usize) -> (u32, u32) {
     let offset = offset.min(source.len());
     let prefix = &source[..offset];
@@ -658,12 +708,10 @@ const choose = id => { selected.value = id }
   </section>
 </template>"#;
 
-    fn options() -> SyrinxCompileOptions {
-        SyrinxCompileOptions {
+    fn options() -> SyrinxRsxOptions {
+        SyrinxRsxOptions {
             filename: "TimeTravelTable.vue".to_owned(),
             component_name: Some("TimeTravelTable".to_owned()),
-            component_id: 100,
-            protocol_schema_sha256: "a".repeat(64),
             ..Default::default()
         }
     }
@@ -680,7 +728,7 @@ const choose = id => { selected.value = id }
             report
                 .sites
                 .iter()
-                .any(|site| site.role.starts_with("list:"))
+                .any(|site| site.role == "list" || site.role.starts_with("list:"))
         );
     }
 

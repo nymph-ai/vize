@@ -31,4 +31,4 @@ pub use coverage::{
 pub use diagnostic::{SyrinxCompileFailure, SyrinxDiagnostic};
 pub use hybrid::{ResidualExport, SyrinxHybridArtifact, compile_syrinx_hybrid};
 pub use model::*;
-pub use rsx::{RsxExpressionHook, SyrinxRsxArtifact, compile_syrinx_rsx};
+pub use rsx::{RsxExpressionHook, SyrinxRsxArtifact, SyrinxRsxOptions, compile_syrinx_rsx};

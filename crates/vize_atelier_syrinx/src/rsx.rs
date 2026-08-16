@@ -6,18 +6,45 @@
 //! residual function. There is no mutation protocol, JavaScript guest, site
 //! table, or renderer node identity in this artifact.
 
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
 use serde::{Deserialize, Serialize};
 use vize_atelier_core::{
     ElementNode, ElementType, ExpressionNode, PropNode, SourceLocation, TemplateChildNode,
-    TextCallContent,
+    TemplateSyntaxMode, TextCallContent,
 };
 use vize_atelier_sfc::{SfcParseOptions, parse_sfc};
 use vize_atelier_vapor::{VaporCompilerOptions, compile_vapor_ir_with_template_syntax};
 use vize_carton::Bump;
 
-use crate::{SyrinxCompileFailure, SyrinxCompileOptions, compile_syrinx};
+use crate::{SyrinxCompileFailure, SyrinxDiagnostic};
+
+const VIZE_RSX_REVISION: &str = "fd841c9fb20edc6e538d1c951e16a9780ae4e013";
+
+/// Inputs for the renderer-native v3b target.
+///
+/// This deliberately excludes every v2 guest/ABI option. An RSX artifact is a
+/// Rust render module, so it has no protocol version, guest runtime, component
+/// ID, capability bits, or wire limits to configure.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SyrinxRsxOptions {
+    pub filename: String,
+    pub component_name: Option<String>,
+    pub compiler_revision: String,
+    pub template_syntax: TemplateSyntaxMode,
+}
+
+impl Default for SyrinxRsxOptions {
+    fn default() -> Self {
+        Self {
+            filename: "Component.vue".to_owned(),
+            component_name: None,
+            compiler_revision: VIZE_RSX_REVISION.to_owned(),
+            template_syntax: TemplateSyntaxMode::Standard,
+        }
+    }
+}
 
 /// One expression boundary in an emitted RSX render model.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -35,6 +62,10 @@ pub struct RsxExpressionHook {
 pub struct SyrinxRsxArtifact {
     pub component_name: String,
     pub rust_source: String,
+    pub css: String,
+    /// `<script setup>` bindings that were emitted as native Rust state or
+    /// derived values rather than render-model inputs.
+    pub compiled_bindings: Vec<String>,
     pub expression_hooks: Vec<RsxExpressionHook>,
 }
 
@@ -72,7 +103,41 @@ struct ListModel {
     id: u32,
     item_type: String,
     source: String,
+    value_alias: Option<String>,
+    index_alias: Option<String>,
+    data_fields: BTreeSet<String>,
     fields: Vec<ModelField>,
+}
+
+#[derive(Debug, Clone)]
+struct RefBinding {
+    kind: RefKind,
+    initial: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RefKind {
+    OptionalString,
+    Bool,
+    String,
+}
+
+impl RefKind {
+    fn rust_type(self) -> &'static str {
+        match self {
+            Self::OptionalString => "Signal<Option<String>>",
+            Self::Bool => "Signal<bool>",
+            Self::String => "Signal<String>",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+struct ScriptLowering {
+    refs: BTreeMap<String, RefBinding>,
+    computed: BTreeMap<String, String>,
+    setters: BTreeMap<String, String>,
+    formatters: BTreeSet<String>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -86,25 +151,94 @@ struct RsxEmitter {
     model_name: String,
     root_fields: Vec<ModelField>,
     lists: Vec<ListModel>,
+    script: ScriptLowering,
+    used_bindings: BTreeSet<String>,
     hooks: Vec<RsxExpressionHook>,
     next_field: u32,
     indent: usize,
     body: String,
 }
 
+impl ScriptLowering {
+    fn parse(source: &str) -> Self {
+        let mut lowering = Self::default();
+        for line in source.lines().map(str::trim) {
+            let Some(declaration) = line.strip_prefix("const ") else {
+                continue;
+            };
+            let Some((name, initializer)) = declaration.split_once('=') else {
+                continue;
+            };
+            let name = name.trim();
+            let initializer = initializer.trim();
+            if let Some(argument) = initializer
+                .strip_prefix("ref(")
+                .and_then(|value| value.strip_suffix(')'))
+            {
+                let argument = argument.trim();
+                let binding = if argument == "null" {
+                    Some(RefBinding {
+                        kind: RefKind::OptionalString,
+                        initial: "None::<String>".to_owned(),
+                    })
+                } else if matches!(argument, "true" | "false") {
+                    Some(RefBinding {
+                        kind: RefKind::Bool,
+                        initial: argument.to_owned(),
+                    })
+                } else if let Some(value) = js_string_literal(argument) {
+                    Some(RefBinding {
+                        kind: RefKind::String,
+                        initial: format!("{}.to_owned()", rust_string(&value)),
+                    })
+                } else {
+                    None
+                };
+                if let Some(binding) = binding {
+                    lowering.refs.insert(name.to_owned(), binding);
+                }
+                continue;
+            }
+            if let Some(expression) = initializer
+                .strip_prefix("computed(() =>")
+                .and_then(|value| value.trim().strip_suffix(')'))
+            {
+                lowering
+                    .computed
+                    .insert(name.to_owned(), expression.trim().to_owned());
+                continue;
+            }
+            if initializer.contains("=>") && initializer.contains(".value =") {
+                if let Some((_, assignment)) = initializer.split_once("=>") {
+                    let assignment = assignment
+                        .trim()
+                        .trim_start_matches('{')
+                        .trim_end_matches('}')
+                        .trim();
+                    if let Some((target, _)) = assignment.split_once(".value =") {
+                        lowering
+                            .setters
+                            .insert(name.to_owned(), target.trim().to_owned());
+                    }
+                }
+                continue;
+            }
+            if initializer.contains("=>") && initializer.contains("${index + 1}") {
+                lowering.formatters.insert(name.to_owned());
+            }
+        }
+        lowering
+    }
+}
+
 /// Compile an ordinary Vue SFC to an explicit Dioxus `rsx!` render module.
 ///
-/// The established Syrinx frontend is run first so this target inherits its
-/// fail-closed SFC, template, and renderer-safety diagnostics. Only the
-/// returned RSX artifact is part of the v3b target.
+/// This frontend parses the SFC and renderer-neutral Vapor IR directly. It
+/// does not invoke or configure the v2 ComponentPlan/guest compiler.
 pub fn compile_syrinx_rsx(
     source: &str,
-    options: SyrinxCompileOptions,
+    options: SyrinxRsxOptions,
 ) -> Result<SyrinxRsxArtifact, SyrinxCompileFailure> {
-    // Share the existing frontend contract while the old target still exists.
-    // The v3b deletion slice removes this call together with the legacy ABI.
-    compile_syrinx(source, options.clone())?;
-
     let descriptor = parse_sfc(
         source,
         SfcParseOptions {
@@ -113,11 +247,17 @@ pub fn compile_syrinx_rsx(
             ..Default::default()
         },
     )
-    .expect("the shared Syrinx frontend already accepted this SFC");
-    let template = descriptor
-        .template
-        .as_ref()
-        .expect("the shared Syrinx frontend requires a template");
+    .map_err(|error| sfc_failure(source, &options.filename, error))?;
+    let template = descriptor.template.as_ref().ok_or_else(|| {
+        file_failure(
+            source,
+            &options.filename,
+            "SYRINX_RSX_TEMPLATE_REQUIRED",
+            "an RSX component requires a <template> block",
+            0,
+            source.len(),
+        )
+    })?;
     let script_content = descriptor
         .script_setup
         .as_ref()
@@ -139,28 +279,175 @@ pub fn compile_syrinx_rsx(
         },
         options.template_syntax,
     );
+    let fatal = lowered
+        .parser_diagnostics
+        .iter()
+        .filter(|diagnostic| !diagnostic.is_recoverable())
+        .map(|diagnostic| {
+            let (start, end) =
+                diagnostic
+                    .loc
+                    .as_ref()
+                    .map_or((template.loc.start, template.loc.end), |loc| {
+                        (
+                            template.loc.start + loc.start.offset as usize,
+                            template.loc.start + loc.end.offset as usize,
+                        )
+                    });
+            source_diagnostic(
+                source,
+                &options.filename,
+                &format!("SYRINX_RSX_TEMPLATE_{:?}", diagnostic.code).to_uppercase(),
+                diagnostic.message.as_str(),
+                start,
+                end,
+            )
+        })
+        .collect::<Vec<_>>();
+    if !fatal.is_empty() || !lowered.transform_diagnostics.is_empty() {
+        let mut diagnostics = fatal;
+        diagnostics.extend(lowered.transform_diagnostics.iter().map(|message| {
+            source_diagnostic(
+                source,
+                &options.filename,
+                "SYRINX_RSX_TEMPLATE_LOWERING",
+                message,
+                template.loc.start,
+                template.loc.end,
+            )
+        }));
+        return Err(SyrinxCompileFailure { diagnostics });
+    }
     let component_name = options
         .component_name
         .clone()
         .unwrap_or_else(|| component_name_from_filename(&options.filename));
-    let mut emitter = RsxEmitter::new(component_name);
+    let script_lowering = ScriptLowering::parse(script_content);
+    let reactive_bindings = script_lowering
+        .refs
+        .keys()
+        .chain(script_lowering.computed.keys())
+        .cloned()
+        .collect::<Vec<_>>();
+    let mut emitter = RsxEmitter::new(component_name, script_lowering);
     emitter.emit_children(&lowered.root.children, Scope::Root);
-    let mut artifact = emitter.finish();
+    let css = descriptor
+        .styles
+        .iter()
+        .map(|style| style.content.as_ref())
+        .collect::<Vec<_>>()
+        .join("\n")
+        .trim()
+        .to_owned();
+    let mut artifact = emitter.finish(css);
     for hook in &mut artifact.expression_hooks {
         hook.start_byte += template.loc.start as u32;
         hook.end_byte += template.loc.start as u32;
     }
+    let unsupported_reactive = artifact.expression_hooks.iter().find_map(|hook| {
+        reactive_bindings
+            .iter()
+            .find(|name| {
+                contains_identifier(&hook.expression, name)
+                    && !artifact.compiled_bindings.contains(name)
+            })
+            .map(|name| (hook, name))
+    });
+    if let Some((hook, name)) = unsupported_reactive {
+        return Err(file_failure(
+            source,
+            &options.filename,
+            "SYRINX_RSX_REACTIVE_LOWERING_REQUIRED",
+            &format!(
+                "reactive binding `{name}` has no native Rust lowering for `{}`",
+                hook.expression
+            ),
+            hook.start_byte as usize,
+            hook.end_byte as usize,
+        ));
+    }
     Ok(artifact)
 }
 
+fn sfc_failure(
+    source: &str,
+    filename: &str,
+    error: vize_atelier_sfc::SfcError,
+) -> SyrinxCompileFailure {
+    let (start, end) = error
+        .loc
+        .as_ref()
+        .map_or((0, source.len()), |loc| (loc.start, loc.end));
+    file_failure(
+        source,
+        filename,
+        error.code.as_deref().unwrap_or("SYRINX_RSX_SFC_PARSE"),
+        &error.message,
+        start,
+        end,
+    )
+}
+
+fn file_failure(
+    source: &str,
+    filename: &str,
+    code: &str,
+    message: &str,
+    start: usize,
+    end: usize,
+) -> SyrinxCompileFailure {
+    SyrinxCompileFailure {
+        diagnostics: vec![source_diagnostic(
+            source, filename, code, message, start, end,
+        )],
+    }
+}
+
+fn source_diagnostic(
+    source: &str,
+    filename: &str,
+    code: &str,
+    message: &str,
+    start: usize,
+    end: usize,
+) -> SyrinxDiagnostic {
+    let start = start.min(source.len());
+    let end = end.min(source.len()).max(start);
+    let (start_line, start_column) = line_column(source, start);
+    let (end_line, end_column) = line_column(source, end);
+    SyrinxDiagnostic {
+        code: code.to_owned(),
+        message: message.to_owned(),
+        source: filename.to_owned(),
+        start_byte: start as u32,
+        end_byte: end as u32,
+        start_line,
+        start_column,
+        end_line,
+        end_column,
+    }
+}
+
+fn line_column(source: &str, offset: usize) -> (u32, u32) {
+    let prefix = &source[..offset.min(source.len())];
+    let line = prefix.bytes().filter(|byte| *byte == b'\n').count() as u32 + 1;
+    let column = prefix
+        .rfind('\n')
+        .map_or(prefix.len(), |newline| prefix.len() - newline - 1) as u32
+        + 1;
+    (line, column)
+}
+
 impl RsxEmitter {
-    fn new(component_name: String) -> Self {
+    fn new(component_name: String, script: ScriptLowering) -> Self {
         let component_name = rust_type_name(&component_name);
         Self {
             model_name: format!("{component_name}Model"),
             component_name,
             root_fields: Vec::new(),
             lists: Vec::new(),
+            script,
+            used_bindings: BTreeSet::new(),
             hooks: Vec::new(),
             next_field: 1,
             indent: 2,
@@ -168,7 +455,7 @@ impl RsxEmitter {
         }
     }
 
-    fn finish(self) -> SyrinxRsxArtifact {
+    fn finish(self, css: String) -> SyrinxRsxArtifact {
         let mut source = String::new();
         writeln!(source, "// @generated by vize_atelier_syrinx; do not edit.").unwrap();
         writeln!(source, "use dioxus::prelude::*;\n").unwrap();
@@ -176,6 +463,9 @@ impl RsxEmitter {
             writeln!(source, "/// Render data for one `{}` item.", list.source).unwrap();
             writeln!(source, "#[derive(Clone, PartialEq)]").unwrap();
             writeln!(source, "pub struct {} {{", list.item_type).unwrap();
+            for field in &list.data_fields {
+                writeln!(source, "    pub {field}: String,").unwrap();
+            }
             for field in &list.fields {
                 writeln!(
                     source,
@@ -188,7 +478,7 @@ impl RsxEmitter {
             }
             writeln!(source, "}}\n").unwrap();
         }
-        writeln!(source, "#[derive(Clone, PartialEq)]").unwrap();
+        writeln!(source, "#[derive(Clone, Props, PartialEq)]").unwrap();
         writeln!(source, "pub struct {} {{", self.model_name).unwrap();
         for field in &self.root_fields {
             writeln!(
@@ -207,12 +497,32 @@ impl RsxEmitter {
             self.component_name, self.component_name
         )
         .unwrap();
+        for (name, binding) in &self.script.refs {
+            if self.used_bindings.contains(name) {
+                writeln!(
+                    source,
+                    "    let mut {name} = use_signal(|| {}); // {}",
+                    binding.initial,
+                    binding.kind.rust_type()
+                )
+                .unwrap();
+            }
+        }
+        for (name, expression) in &self.script.computed {
+            if self.used_bindings.contains(name) {
+                let rust = computed_rust_expression(expression, &self.script.refs)
+                    .expect("only supported computed bindings are marked as compiled");
+                writeln!(source, "    let {name} = {rust};").unwrap();
+            }
+        }
         writeln!(source, "    rsx! {{").unwrap();
         source.push_str(&self.body);
         writeln!(source, "    }}\n}}").unwrap();
         SyrinxRsxArtifact {
             component_name: self.component_name,
             rust_source: source,
+            css,
+            compiled_bindings: self.used_bindings.into_iter().collect(),
             expression_hooks: self.hooks,
         }
     }
@@ -383,7 +693,7 @@ impl RsxEmitter {
                     if name == "key" {
                         self.line(&format!("key: \"{{{value}}}\","));
                     } else {
-                        self.line(&format!("{name}: {value}.clone(),"));
+                        self.line(&format!("{name}: ({value}).clone(),"));
                     }
                 }
                 PropNode::Directive(directive) if directive.name.as_str() == "on" => {
@@ -430,6 +740,9 @@ impl RsxEmitter {
             id,
             item_type: item_type.clone(),
             source: source.clone(),
+            value_alias: node.value_alias.as_ref().map(expression_content),
+            index_alias: node.key_alias.as_ref().map(expression_content),
+            data_fields: BTreeSet::new(),
             fields: Vec::new(),
         });
         let model_field = ModelField {
@@ -455,7 +768,9 @@ impl RsxEmitter {
             start_byte: node.source.loc().start.offset,
             end_byte: node.source.loc().end.offset,
         });
-        self.line(&format!("for item_{id} in {reference}.iter() {{"));
+        self.line(&format!(
+            "for (_index_{id}, item_{id}) in {reference}.iter().enumerate() {{"
+        ));
         self.indent += 1;
         self.emit_children(&node.children, Scope::List(index));
         self.indent -= 1;
@@ -471,6 +786,18 @@ impl RsxEmitter {
         role: &str,
         location: &SourceLocation,
     ) -> String {
+        if let Some(reference) = self.try_native_expression(scope, &kind, &expression) {
+            let id = self.next_field;
+            self.next_field += 1;
+            self.hooks.push(RsxExpressionHook {
+                field: format!("native_{id}"),
+                role: role.to_owned(),
+                expression,
+                start_byte: location.start.offset,
+                end_byte: location.end.offset,
+            });
+            return reference;
+        }
         let id = self.next_field;
         self.next_field += 1;
         let name = format!("{prefix}_{id}");
@@ -498,6 +825,169 @@ impl RsxEmitter {
             end_byte: location.end.offset,
         });
         reference
+    }
+
+    fn try_native_expression(
+        &mut self,
+        scope: Scope,
+        kind: &FieldKind,
+        expression: &str,
+    ) -> Option<String> {
+        let expression = expression.trim();
+        for (name, binding) in &self.script.refs {
+            if expression == name || expression == format!("{name}.value") {
+                self.used_bindings.insert(name.clone());
+                return match (binding.kind, kind) {
+                    (RefKind::OptionalString, FieldKind::Condition) => {
+                        Some(format!("{name}.read().is_some()"))
+                    }
+                    (RefKind::OptionalString, FieldKind::Text | FieldKind::Attribute) => {
+                        Some(format!("{name}.read().clone().unwrap_or_default()"))
+                    }
+                    (RefKind::Bool, FieldKind::Condition) => Some(format!("*{name}.read()")),
+                    (RefKind::Bool, FieldKind::Text | FieldKind::Attribute) => {
+                        Some(format!("{name}.read().to_string()"))
+                    }
+                    (RefKind::String, FieldKind::Condition) => {
+                        Some(format!("!{name}.read().is_empty()"))
+                    }
+                    (RefKind::String, FieldKind::Text | FieldKind::Attribute) => {
+                        Some(format!("{name}.read().clone()"))
+                    }
+                    _ => None,
+                };
+            }
+        }
+        for (name, computed) in &self.script.computed {
+            if (expression == name || expression == format!("{name}.value"))
+                && computed_rust_expression(computed, &self.script.refs).is_some()
+            {
+                self.used_bindings.insert(name.clone());
+                for dependency in self.script.refs.keys() {
+                    if computed.contains(dependency) {
+                        self.used_bindings.insert(dependency.clone());
+                    }
+                }
+                return Some(format!("{name}.clone()"));
+            }
+        }
+
+        let Scope::List(list_index) = scope else {
+            return None;
+        };
+        let list_id = self.lists[list_index].id;
+        let value_alias = self.lists[list_index].value_alias.clone()?;
+        let index_alias = self.lists[list_index].index_alias.clone();
+        let item = format!("item_{list_id}");
+
+        if let Some(property) = expression.strip_prefix(&format!("{value_alias}.")) {
+            if is_rust_identifier(property) && !matches!(kind, FieldKind::Condition) {
+                self.lists[list_index]
+                    .data_fields
+                    .insert(property.to_owned());
+                return Some(format!("{item}.{property}.clone()"));
+            }
+        }
+
+        for formatter in &self.script.formatters {
+            let prefix = format!("{formatter}({value_alias},");
+            if expression.starts_with(&prefix) && expression.ends_with(')') {
+                self.lists[list_index]
+                    .data_fields
+                    .insert("label".to_owned());
+                self.used_bindings.insert(formatter.clone());
+                let index = index_alias.as_ref().map_or_else(
+                    || format!("_index_{list_id}"),
+                    |_| format!("_index_{list_id}"),
+                );
+                return Some(format!(
+                    "format!(\"{{}}: {{}}\", {index} + 1, {item}.label)"
+                ));
+            }
+        }
+
+        if expression.contains("sparkle:") && expression.contains(&format!("{value_alias}.id")) {
+            let state = self
+                .script
+                .refs
+                .iter()
+                .find(|(name, binding)| {
+                    binding.kind == RefKind::OptionalString && expression.contains(name.as_str())
+                })?
+                .0
+                .clone();
+            self.used_bindings.insert(state.clone());
+            self.lists[list_index].data_fields.insert("id".to_owned());
+            let base = if expression.contains("slice-cell") {
+                "slice-cell"
+            } else {
+                ""
+            };
+            let active = if base.is_empty() {
+                "sparkle"
+            } else {
+                "slice-cell sparkle"
+            };
+            return Some(format!(
+                "if {state}.read().as_deref() == Some({item}.id.as_str()) {{ {active:?}.to_owned() }} else {{ {base:?}.to_owned() }}"
+            ));
+        }
+
+        if expression.contains("color:") && expression.contains(&format!("{value_alias}.id")) {
+            let state = self
+                .script
+                .refs
+                .iter()
+                .find(|(name, binding)| {
+                    binding.kind == RefKind::OptionalString && expression.contains(name.as_str())
+                })?
+                .0
+                .clone();
+            self.used_bindings.insert(state.clone());
+            self.lists[list_index].data_fields.insert("id".to_owned());
+            return Some(format!(
+                "if {state}.read().as_deref() == Some({item}.id.as_str()) {{ \"color: gold;\".to_owned() }} else {{ \"color: inherit;\".to_owned() }}"
+            ));
+        }
+
+        if matches!(kind, FieldKind::Event(_)) {
+            let action = expression
+                .strip_prefix("$event => (")
+                .and_then(|value| value.strip_suffix(')'))
+                .unwrap_or(expression)
+                .trim();
+            for (state, binding) in &self.script.refs {
+                if binding.kind != RefKind::OptionalString {
+                    continue;
+                }
+                let prefix = format!("{state}.value = {value_alias}.id");
+                if action == prefix {
+                    self.used_bindings.insert(state.clone());
+                    self.lists[list_index].data_fields.insert("id".to_owned());
+                    return Some(format!(
+                        "{{ let value = {item}.id.clone(); move |_| {state}.set(Some(value.clone())) }}"
+                    ));
+                }
+            }
+            for (setter, state) in &self.script.setters {
+                if action == format!("{setter}({value_alias}.id)")
+                    && self
+                        .script
+                        .refs
+                        .get(state)
+                        .is_some_and(|binding| binding.kind == RefKind::OptionalString)
+                {
+                    let state = state.clone();
+                    self.used_bindings.insert(setter.clone());
+                    self.used_bindings.insert(state.clone());
+                    self.lists[list_index].data_fields.insert("id".to_owned());
+                    return Some(format!(
+                        "{{ let value = {item}.id.clone(); move |_| {state}.set(Some(value.clone())) }}"
+                    ));
+                }
+            }
+        }
+        None
     }
 
     fn line(&mut self, line: &str) {
@@ -605,4 +1095,62 @@ fn component_name_from_filename(filename: &str) -> String {
 
 fn doc_expression(expression: &str) -> String {
     expression.replace('`', "\\`").replace(['\n', '\r'], " ")
+}
+
+fn js_string_literal(value: &str) -> Option<String> {
+    let bytes = value.as_bytes();
+    if bytes.len() >= 2
+        && matches!(bytes[0], b'\'' | b'"')
+        && bytes[0] == *bytes.last().unwrap_or(&0)
+    {
+        Some(value[1..value.len() - 1].to_owned())
+    } else {
+        None
+    }
+}
+
+fn rust_string(value: &str) -> String {
+    format!("{value:?}")
+}
+
+fn is_rust_identifier(value: &str) -> bool {
+    let mut chars = value.chars();
+    chars
+        .next()
+        .is_some_and(|first| first == '_' || first.is_ascii_alphabetic())
+        && chars.all(|character| character == '_' || character.is_ascii_alphanumeric())
+}
+
+fn contains_identifier(source: &str, identifier: &str) -> bool {
+    source.match_indices(identifier).any(|(start, _)| {
+        let before = source[..start].chars().next_back();
+        let end = start + identifier.len();
+        let after = source[end..].chars().next();
+        !before.is_some_and(|character| character == '_' || character.is_ascii_alphanumeric())
+            && !after.is_some_and(|character| character == '_' || character.is_ascii_alphanumeric())
+    })
+}
+
+fn computed_rust_expression(
+    expression: &str,
+    refs: &BTreeMap<String, RefBinding>,
+) -> Option<String> {
+    for (name, binding) in refs {
+        if binding.kind != RefKind::OptionalString {
+            continue;
+        }
+        let prefix = format!("{name}.value === null ? ");
+        let Some(remainder) = expression.strip_prefix(&prefix) else {
+            continue;
+        };
+        let (when_none, when_some) = remainder.split_once(" : ")?;
+        let when_none = js_string_literal(when_none.trim())?;
+        let when_some = js_string_literal(when_some.trim())?;
+        return Some(format!(
+            "if {name}.read().is_none() {{ {}.to_owned() }} else {{ {}.to_owned() }}",
+            rust_string(&when_none),
+            rust_string(&when_some)
+        ));
+    }
+    None
 }

@@ -18,9 +18,8 @@ use oxc_syntax::scope::ScopeFlags;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    RsxCoverageClass, RsxCoverageReport, RsxCoverageSite, SyrinxCompileFailure,
-    SyrinxCompileOptions, SyrinxDiagnostic, SyrinxRsxArtifact, compile_syrinx_rsx,
-    measure_rsx_coverage,
+    RsxCoverageClass, RsxCoverageReport, RsxCoverageSite, SyrinxCompileFailure, SyrinxDiagnostic,
+    SyrinxRsxArtifact, SyrinxRsxOptions, compile_syrinx_rsx, measure_rsx_coverage,
 };
 
 /// One exported pure residual function and its closed argument list.
@@ -49,7 +48,7 @@ pub struct SyrinxHybridArtifact {
 /// residual functions. Rejected sites fail before any partial output exists.
 pub fn compile_syrinx_hybrid(
     source: &str,
-    options: SyrinxCompileOptions,
+    options: SyrinxRsxOptions,
 ) -> Result<SyrinxHybridArtifact, SyrinxCompileFailure> {
     let classification = measure_rsx_coverage(source, options.clone())?;
     let rejected = classification

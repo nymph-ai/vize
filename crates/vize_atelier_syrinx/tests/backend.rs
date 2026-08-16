@@ -5,7 +5,8 @@ use oxc_parser::Parser;
 use oxc_span::SourceType;
 use sha2::{Digest, Sha256};
 use vize_atelier_syrinx::{
-    BindingKind, SyrinxCompileOptions, compile_syrinx, compile_syrinx_hybrid, compile_syrinx_rsx,
+    BindingKind, SyrinxCompileOptions, SyrinxRsxOptions, compile_syrinx, compile_syrinx_hybrid,
+    compile_syrinx_rsx,
 };
 
 const TABLE: &str = r#"<script setup>
@@ -48,12 +49,24 @@ const choose = id => { selected.value = id }
 </style>
 "#;
 
+const CANONICAL_TIME_TRAVEL_TABLE: &str = include_str!("fixtures/TimeTravelTable.vue");
+const CANONICAL_TIME_TRAVEL_TABLE_SHA256: &str =
+    "f93c37898853f1c44584daa672cb97859db42ddf908bb52d00b1925f0295897a";
+
 fn options() -> SyrinxCompileOptions {
     SyrinxCompileOptions {
         filename: "TimeTravelTable.vue".to_owned(),
         component_name: Some("TimeTravelTable".to_owned()),
         component_id: 100,
         protocol_schema_sha256: "a".repeat(64),
+        ..Default::default()
+    }
+}
+
+fn rsx_options() -> SyrinxRsxOptions {
+    SyrinxRsxOptions {
+        filename: "TimeTravelTable.vue".to_owned(),
+        component_name: Some("TimeTravelTable".to_owned()),
         ..Default::default()
     }
 }
@@ -70,8 +83,9 @@ fn assert_javascript_module(source: &str) {
 
 #[test]
 fn v3b_emits_deterministic_explicit_rsx_without_the_v2_abi() {
-    let first = compile_syrinx_rsx(TABLE, options()).expect("table SFC should compile to RSX");
-    let second = compile_syrinx_rsx(TABLE, options()).expect("repeat RSX compilation should work");
+    let first = compile_syrinx_rsx(TABLE, rsx_options()).expect("table SFC should compile to RSX");
+    let second =
+        compile_syrinx_rsx(TABLE, rsx_options()).expect("repeat RSX compilation should work");
 
     assert_eq!(first, second, "identical inputs must be byte deterministic");
     assert_eq!(first.component_name, "TimeTravelTable");
@@ -82,9 +96,9 @@ fn v3b_emits_deterministic_explicit_rsx_without_the_v2_abi() {
         "rsx! {",
         "section {",
         "table {",
-        "for item_1 in model.list_1.iter() {",
+        "for (_index_1, item_1) in model.list_1.iter().enumerate() {",
         "key:",
-        "if model.condition_",
+        "if selected.read().is_some()",
         "onmouseenter:",
         "onclick:",
     ] {
@@ -119,11 +133,63 @@ fn v3b_emits_deterministic_explicit_rsx_without_the_v2_abi() {
             .iter()
             .any(|hook| hook.role == "event:click")
     );
+    assert_eq!(
+        first.compiled_bindings,
+        ["choose", "hovered", "metaLine", "rootClass", "selected"]
+    );
+    assert!(first.rust_source.contains("use_signal(|| None::<String>)"));
+    assert!(
+        first
+            .rust_source
+            .contains("let rootClass = if selected.read().is_none()")
+    );
+    assert!(!first.rust_source.contains("pub attribute_1: String"));
+    assert_eq!(
+        first.css,
+        ".table { width: 100%; }\n.sparkle { color: gold; }"
+    );
+}
+
+#[test]
+fn exact_canonical_sfc_compiles_through_rsx_and_stock_vapor_backends() {
+    let source_hash = Sha256::digest(CANONICAL_TIME_TRAVEL_TABLE.as_bytes())
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<String>();
+    assert_eq!(source_hash, CANONICAL_TIME_TRAVEL_TABLE_SHA256);
+    let artifact = compile_syrinx_hybrid(CANONICAL_TIME_TRAVEL_TABLE, rsx_options())
+        .expect("canonical SFC should compile through Syrinx RSX");
+    assert_eq!(artifact.classification.summary.rejected_sites, 0);
+    assert_eq!(artifact.classification.summary.residual_render_sites, 0);
+    assert_eq!(artifact.rsx.compiled_bindings, ["hovered", "rootClass"]);
+
+    let descriptor = vize_atelier_sfc::parse_sfc(
+        CANONICAL_TIME_TRAVEL_TABLE,
+        vize_atelier_sfc::SfcParseOptions {
+            filename: "TimeTravelTable.vue".into(),
+            ..Default::default()
+        },
+    )
+    .expect("canonical SFC should parse for stock Vapor");
+    let vapor = vize_atelier_sfc::compile_sfc(
+        &descriptor,
+        vize_atelier_sfc::SfcCompileOptions {
+            vapor: true,
+            ..Default::default()
+        },
+    )
+    .expect("canonical SFC should compile through stock Vapor");
+    assert!(
+        vapor.errors.is_empty(),
+        "stock Vapor errors: {:?}",
+        vapor.errors
+    );
+    assert!(vapor.code.contains("render"));
 }
 
 #[test]
 fn v3b_hybrid_emit_is_empty_for_the_fully_compiled_table() {
-    let artifact = compile_syrinx_hybrid(TABLE, options()).expect("table should classify");
+    let artifact = compile_syrinx_hybrid(TABLE, rsx_options()).expect("table should classify");
     assert!(artifact.residual_exports.is_empty());
     assert_eq!(
         artifact.residual_module,
@@ -140,7 +206,7 @@ const label = format('alpha')
 </script>
 <template><p>{{ label }}</p></template>
 "#;
-    let mut compile_options = options();
+    let mut compile_options = rsx_options();
     compile_options.filename = "ResidualLabel.vue".to_owned();
     compile_options.component_name = Some("ResidualLabel".to_owned());
     let artifact = compile_syrinx_hybrid(source, compile_options).expect("pure residuals compile");
@@ -166,7 +232,7 @@ const label = () => fancyFormat(count.value)
 </script>
 <template><p>{{ label() }}</p></template>
 "#;
-    let mut compile_options = options();
+    let mut compile_options = rsx_options();
     compile_options.filename = "RejectedResidual.vue".to_owned();
     compile_options.component_name = Some("RejectedResidual".to_owned());
     let error = compile_syrinx_hybrid(source, compile_options)
