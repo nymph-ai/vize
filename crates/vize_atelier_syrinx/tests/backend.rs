@@ -162,6 +162,13 @@ fn exact_canonical_sfc_compiles_through_rsx_and_stock_vapor_backends() {
     assert_eq!(artifact.classification.summary.rejected_sites, 0);
     assert_eq!(artifact.classification.summary.residual_render_sites, 0);
     assert_eq!(artifact.rsx.compiled_bindings, ["hovered", "rootClass"]);
+    assert!(
+        artifact
+            .rsx
+            .rust_source
+            .contains("key: (item_1.id.clone()).clone(),"),
+        "v-for keys must remain dynamic Rust expressions"
+    );
 
     let descriptor = vize_atelier_sfc::parse_sfc(
         CANONICAL_TIME_TRAVEL_TABLE,
