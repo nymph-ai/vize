@@ -13,6 +13,7 @@
 //! translates, or emulates `@vue/runtime-vapor` calls.
 
 mod compiler;
+mod coverage;
 mod diagnostic;
 mod guest;
 mod model;
@@ -20,6 +21,10 @@ mod model;
 pub use compiler::{
     SyrinxCompileOptions, SyrinxComponentLink, SyrinxProgramSource, compile_syrinx,
     compile_syrinx_program,
+};
+pub use coverage::{
+    RsxCoverageClass, RsxCoverageDecision, RsxCoverageReport, RsxCoverageSite, RsxCoverageSiteKind,
+    RsxCoverageSummary, measure_rsx_coverage,
 };
 pub use diagnostic::{SyrinxCompileFailure, SyrinxDiagnostic};
 pub use model::*;
