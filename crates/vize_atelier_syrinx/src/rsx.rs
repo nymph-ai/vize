@@ -994,6 +994,24 @@ impl RsxEmitter {
                 }
                 PropNode::Directive(directive) if directive.name.as_str() == "bind" => {
                     let Some(argument) = directive.arg.as_ref() else {
+                        let expression = directive
+                            .exp
+                            .as_ref()
+                            .map(expression_content)
+                            .unwrap_or_default();
+                        let dynamic = self.add_field(
+                            scope,
+                            FieldKind::DynamicAttributes,
+                            "dynamic_attributes",
+                            expression,
+                            "dynamic-attributes",
+                            directive
+                                .exp
+                                .as_ref()
+                                .map(ExpressionNode::loc)
+                                .unwrap_or(&directive.loc),
+                        );
+                        dynamic_attribute_spreads.push(dynamic);
                         continue;
                     };
                     let name = expression_content(argument);
@@ -1418,13 +1436,16 @@ fn prepare_template_refs(
     script: &mut ScriptLowering,
 ) -> Vec<SyrinxDiagnostic> {
     let mut diagnostics = Vec::new();
+    let mut seen_bindings = BTreeSet::new();
     collect_template_ref_diagnostics(
         source,
         filename,
         template_start,
         children,
         in_for,
+        false,
         script,
+        &mut seen_bindings,
         &mut diagnostics,
     );
     diagnostics
@@ -1586,7 +1607,9 @@ fn collect_template_ref_diagnostics(
     template_start: usize,
     children: &[TemplateChildNode<'_>],
     in_for: bool,
+    conditional: bool,
     script: &mut ScriptLowering,
+    seen_bindings: &mut BTreeSet<String>,
     diagnostics: &mut Vec<SyrinxDiagnostic>,
 ) {
     for child in children {
@@ -1622,6 +1645,17 @@ fn collect_template_ref_diagnostics(
                         ));
                         continue;
                     }
+                    if conditional {
+                        diagnostics.push(source_diagnostic(
+                            source,
+                            filename,
+                            "SYRINX_RSX_TEMPLATE_REF_CONDITIONAL_UNSUPPORTED",
+                            "Conditional template refs require clearing mounted data when the element unmounts.",
+                            absolute_start,
+                            absolute_end,
+                        ));
+                        continue;
+                    }
                     if refs.len() > 1 {
                         diagnostics.push(source_diagnostic(
                             source,
@@ -1650,6 +1684,17 @@ fn collect_template_ref_diagnostics(
                             filename,
                             "SYRINX_RSX_TEMPLATE_REF_BINDING_REQUIRED",
                             "A template ref must name one ref(null) setup binding.",
+                            absolute_start,
+                            absolute_end,
+                        ));
+                        continue;
+                    }
+                    if !seen_bindings.insert(name.clone()) {
+                        diagnostics.push(source_diagnostic(
+                            source,
+                            filename,
+                            "SYRINX_RSX_DUPLICATE_TEMPLATE_REF_BINDING",
+                            &format!("Template ref `{name}` is mounted by more than one element."),
                             absolute_start,
                             absolute_end,
                         ));
@@ -1703,7 +1748,9 @@ fn collect_template_ref_diagnostics(
                     template_start,
                     &element.children,
                     in_for,
+                    conditional,
                     script,
+                    seen_bindings,
                     diagnostics,
                 );
             }
@@ -1715,7 +1762,9 @@ fn collect_template_ref_diagnostics(
                         template_start,
                         &branch.children,
                         in_for,
+                        true,
                         script,
+                        seen_bindings,
                         diagnostics,
                     );
                 }
@@ -1726,7 +1775,9 @@ fn collect_template_ref_diagnostics(
                 template_start,
                 &node.children,
                 true,
+                conditional,
                 script,
+                seen_bindings,
                 diagnostics,
             ),
             _ => {}
@@ -1746,13 +1797,30 @@ fn template_ref_binding(prop: &PropNode<'_>) -> Option<(String, SourceLocation)>
                     expression_is_static(argument) && expression_content(argument) == "ref"
                 }) =>
         {
-            directive
-                .exp
-                .as_ref()
-                .map(|expression| (expression_content(expression), prop.loc().clone()))
+            directive.exp.as_ref().map(|expression| {
+                (
+                    normalized_template_ref_binding(&expression_content(expression)),
+                    prop.loc().clone(),
+                )
+            })
         }
         _ => None,
     }
+}
+
+fn normalized_template_ref_binding(expression: &str) -> String {
+    let mut expression = expression.trim();
+    if let Some(literal) = js_string_literal(expression) {
+        return literal;
+    }
+    expression = expression
+        .strip_prefix("$setup.")
+        .or_else(|| expression.strip_prefix("_ctx."))
+        .unwrap_or(expression);
+    expression
+        .strip_suffix(".value")
+        .unwrap_or(expression)
+        .to_owned()
 }
 
 fn element_template_ref(element: &ElementNode<'_>) -> Option<String> {

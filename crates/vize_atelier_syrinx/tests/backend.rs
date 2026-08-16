@@ -262,9 +262,9 @@ fn rsx_scoped_styles_rewrite_selectors_and_annotate_owned_elements() {
 #[test]
 fn dynamic_styles_and_prop_names_become_typed_render_model_fields() {
     let source = r#"<script setup>
-const props = defineProps({ styles: Object, name: String, value: String })
+const props = defineProps({ styles: Object, attrs: Object, name: String, value: String })
 </script>
-<template><div :style="props.styles" :[props.name]="props.value" title="proof">dynamic</div></template>"#;
+<template><div :style="props.styles" :[props.name]="props.value" title="proof" v-bind="props.attrs">dynamic</div></template>"#;
     let artifact = compile_syrinx_checked(source, rsx_options())
         .expect("dynamic style maps and prop names should lower without render JavaScript");
     assert!(artifact.rsx.rust_source.contains("pub style_1: String"));
@@ -290,6 +290,18 @@ const props = defineProps({ styles: Object, name: String, value: String })
         title < spread,
         "RSX spreads must follow ordinary attributes"
     );
+    assert!(
+        artifact
+            .rsx
+            .rust_source
+            .contains("pub dynamic_attributes_3: Vec<Attribute>")
+    );
+    assert!(
+        artifact
+            .rsx
+            .rust_source
+            .contains("..model.dynamic_attributes_3.clone(),")
+    );
     assert!(artifact.rsx.expression_hooks.iter().any(|hook| {
         hook.role == "dynamic-attributes"
             && hook.expression.contains("name: props.name")
@@ -314,7 +326,7 @@ fn template_refs_lower_to_mounted_data_signals_or_fail_when_collection_is_requir
 import { ref } from 'vue'
 const element = ref(null)
 </script>
-<template><button ref="element">mounted</button></template>"#;
+<template><button :ref="element">mounted</button></template>"#;
     let artifact = compile_syrinx_checked(source, rsx_options())
         .expect("one ordinary template ref should lower to onmounted");
     assert!(artifact.rsx.rust_source.contains("use std::rc::Rc;"));
@@ -332,7 +344,7 @@ const element = ref(null)
     );
 
     let component_ref = source
-        .replace("<button ref=\"element\"", "<ChildCell ref=\"element\"")
+        .replace("<button :ref=\"element\"", "<ChildCell :ref=\"element\"")
         .replace("</button>", "</ChildCell>");
     let error = compile_syrinx_rsx(&component_ref, rsx_options())
         .expect_err("component refs expose a different identity type");
@@ -344,7 +356,7 @@ const element = ref(null)
     );
 
     let repeated = source.replace(
-        "<button ref=\"element\">mounted</button>",
+        "<button :ref=\"element\">mounted</button>",
         "<button v-for=\"item in items\" :key=\"item.id\" :ref=\"element\">mounted</button>",
     );
     let error = compile_syrinx_rsx(&repeated, rsx_options())
@@ -355,6 +367,16 @@ const element = ref(null)
             .iter()
             .any(|diagnostic| { diagnostic.code == "SYRINX_RSX_TEMPLATE_REF_FOR_UNSUPPORTED" })
     );
+
+    let conditional = source.replace(
+        "<button :ref=\"element\">",
+        "<button v-if=\"visible\" :ref=\"element\">",
+    );
+    let error = compile_syrinx_rsx(&conditional, rsx_options())
+        .expect_err("conditional refs need unmount clearing");
+    assert!(error.diagnostics.iter().any(|diagnostic| {
+        diagnostic.code == "SYRINX_RSX_TEMPLATE_REF_CONDITIONAL_UNSUPPORTED"
+    }));
 }
 
 #[test]
