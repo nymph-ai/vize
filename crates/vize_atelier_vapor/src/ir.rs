@@ -1,7 +1,9 @@
 //! Vapor Intermediate Representation (IR) types.
 
 use serde::{Deserialize, Serialize};
-use vize_atelier_core::{Namespace, RootNode, SimpleExpressionNode, TemplateChildNode};
+use vize_atelier_core::{
+    Namespace, RootNode, SimpleExpressionNode, SourceLocation, TemplateChildNode,
+};
 use vize_carton::{Box, Bump, FxHashMap, FxHashSet, String, Vec};
 
 /// IR node type discriminant
@@ -58,6 +60,16 @@ pub struct RootIRNode<'a> {
     pub element_template_map: FxHashMap<usize, usize>,
     /// Element IDs that are standalone text nodes (interpolations with their own template)
     pub standalone_text_elements: FxHashSet<usize>,
+    /// Source location of every renderer-visible element ID.
+    ///
+    /// Alternate backends use this map to attach logical sites to the exact
+    /// authored element without interpreting generated Vapor JavaScript.
+    pub element_source_map: FxHashMap<usize, SourceLocation>,
+    /// Source location of every `If` and `For` ID.
+    ///
+    /// Control-flow backends use these locations to emit canonical mount
+    /// anchors directly into their immutable templates.
+    pub control_source_map: FxHashMap<usize, SourceLocation>,
 }
 
 /// Block IR node - unit of reactive computation

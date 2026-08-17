@@ -63,6 +63,7 @@ fn transform_if_node_with_options<'a>(
 
     // Allocate ID for the if node itself
     let if_id = ctx.next_id();
+    ctx.register_control(if_id, &if_node.loc);
 
     // First branch is the v-if condition
     let first_branch = &if_node.branches[0];
@@ -249,6 +250,7 @@ fn transform_for_node_with_options<'a>(
 ) {
     // Allocate for-node ID first (before children consume IDs)
     let for_id = ctx.next_id();
+    ctx.register_control(for_id, &for_node.loc);
 
     // Get source expression
     let source = clone_simple_expr(ctx, &for_node.source);

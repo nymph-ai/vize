@@ -4,10 +4,11 @@
 //! code generation behind the public `compile_vapor*` functions.
 
 use crate::generate::generate_vapor;
+use crate::ir::RootIRNode;
 use crate::ir_drop::drop_ir_stack_safe;
 use crate::lower as vapor_lower;
 use vize_atelier_core::{
-    CompilerError, Namespace,
+    CompilerError, Namespace, RootNode,
     lane::{transform, transform_with_template_syntax_quirks},
     options::{ParserOptions, TemplateSyntaxMode, TransformOptions},
     parser::parse_with_options_and_template_syntax,
@@ -42,6 +43,48 @@ pub struct VaporCompileResult {
     pub templates: Vec<String>,
     /// Error messages during compilation
     pub error_messages: Vec<String>,
+}
+
+/// Parsed and lowered Vapor IR before any renderer-specific JavaScript emit.
+///
+/// This is the stable seam for alternate renderers. Consumers inspect the
+/// transformed template AST and Vapor IR directly; they must not translate or
+/// emulate the JavaScript produced by [`compile_vapor`]. `ir` is `None` when a
+/// fatal parser error prevents lowering.
+#[derive(Debug)]
+pub struct VaporIrCompileResult<'a> {
+    /// Transformed template AST retained for source-exact template emit.
+    pub root: RootNode<'a>,
+    /// Renderer-neutral Vapor operations and effect sites.
+    pub ir: Option<RootIRNode<'a>>,
+    /// Parser diagnostics with source locations.
+    pub parser_diagnostics: std::vec::Vec<CompilerError>,
+    /// Lowering diagnostics produced after template transforms.
+    pub transform_diagnostics: std::vec::Vec<String>,
+}
+
+/// Parse, transform, and lower a Vue template without generating Vapor JS.
+///
+/// The returned AST and IR borrow only from `allocator`, so an alternate
+/// backend can generate immutable templates and guest code in the same call.
+pub fn compile_vapor_ir<'a>(
+    allocator: &'a Bump,
+    source: &'a str,
+    options: VaporCompilerOptions,
+) -> VaporIrCompileResult<'a> {
+    compile_vapor_ir_with_template_syntax(allocator, source, options, TemplateSyntaxMode::Standard)
+}
+
+/// Parse, transform, and lower with an explicit template syntax mode and no JS emit.
+pub fn compile_vapor_ir_with_template_syntax<'a>(
+    allocator: &'a Bump,
+    source: &'a str,
+    options: VaporCompilerOptions,
+    template_syntax: TemplateSyntaxMode,
+) -> VaporIrCompileResult<'a> {
+    vize_carton::ensure_sufficient_stack(|| {
+        compile_vapor_ir_inner_with_stack(allocator, source, options, template_syntax)
+    })
 }
 
 /// Compile a Vue template to Vapor mode
@@ -123,6 +166,48 @@ fn compile_vapor_inner_with_stack<'a>(
     options: VaporCompilerOptions,
     template_syntax: TemplateSyntaxMode,
 ) -> (VaporCompileResult, std::vec::Vec<CompilerError>) {
+    let lowered =
+        compile_vapor_ir_inner_with_stack(allocator, source, options.clone(), template_syntax);
+    let parser_diagnostics = lowered.parser_diagnostics;
+    let transform_diagnostics = lowered.transform_diagnostics;
+    let root = lowered.root;
+    let Some(ir) = lowered.ir else {
+        let fatal = parser_diagnostics
+            .iter()
+            .filter(|error| !error.is_recoverable())
+            .map(|error| error.message.clone())
+            .collect();
+        drop(root);
+        return (
+            VaporCompileResult {
+                code: String::default(),
+                templates: Vec::new(),
+                error_messages: fatal,
+            },
+            parser_diagnostics,
+        );
+    };
+
+    let result = generate_vapor(&ir, options.binding_metadata.as_ref());
+    drop_ir_stack_safe(ir);
+    drop(root);
+
+    (
+        VaporCompileResult {
+            code: result.code,
+            templates: result.templates,
+            error_messages: transform_diagnostics,
+        },
+        parser_diagnostics,
+    )
+}
+
+fn compile_vapor_ir_inner_with_stack<'a>(
+    allocator: &'a Bump,
+    source: &'a str,
+    options: VaporCompilerOptions,
+    template_syntax: TemplateSyntaxMode,
+) -> VaporIrCompileResult<'a> {
     // Parse
     let parser_opts = ParserOptions {
         is_void_tag: vize_carton::is_void_tag,
@@ -139,14 +224,12 @@ fn compile_vapor_inner_with_stack<'a>(
 
     let fatal: std::vec::Vec<_> = errors.iter().filter(|e| !e.is_recoverable()).collect();
     if !fatal.is_empty() {
-        return (
-            VaporCompileResult {
-                code: String::default(),
-                templates: Vec::new(),
-                error_messages: fatal.iter().map(|e| e.message.clone()).collect(),
-            },
+        return VaporIrCompileResult {
+            root,
+            ir: None,
             parser_diagnostics,
-        );
+            transform_diagnostics: std::vec::Vec::new(),
+        };
     }
 
     // Transform to Vapor IR
@@ -169,21 +252,14 @@ fn compile_vapor_inner_with_stack<'a>(
 
     // Lower to Vapor IR
     let (ir, transform_diagnostics) =
-        vapor_lower::transform_to_ir_with_diagnostics(allocator, &root);
+        vapor_lower::transform_to_ir_with_diagnostics(allocator, &root, options.custom_renderer);
 
-    // Generate Vapor code
-    let result = generate_vapor(&ir, binding_metadata.as_ref());
-    drop_ir_stack_safe(ir);
-    drop(root);
-
-    (
-        VaporCompileResult {
-            code: result.code,
-            templates: result.templates,
-            error_messages: transform_diagnostics,
-        },
+    VaporIrCompileResult {
+        root,
+        ir: Some(ir),
         parser_diagnostics,
-    )
+        transform_diagnostics,
+    }
 }
 
 fn get_namespace(tag: &str, parent: Option<&str>) -> Namespace {

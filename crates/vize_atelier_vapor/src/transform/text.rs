@@ -19,6 +19,7 @@ pub(crate) fn transform_text<'a>(
     block: &mut BlockIRNode<'a>,
 ) {
     let element_id = ctx.next_id();
+    ctx.register_element(element_id, &text.loc);
     let template: vize_carton::String = text.content.clone();
     ctx.add_template(element_id, template);
     block.returns.push(element_id);
@@ -31,6 +32,7 @@ pub(crate) fn transform_interpolation<'a>(
     block: &mut BlockIRNode<'a>,
 ) {
     let element_id = ctx.next_id();
+    ctx.register_element(element_id, &interp.loc);
 
     // Register a space placeholder template for standalone interpolations
     // (when not inside a parent element that already provides the template)

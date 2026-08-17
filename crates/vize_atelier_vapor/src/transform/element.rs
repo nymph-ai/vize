@@ -7,7 +7,7 @@ mod deferred;
 #[path = "element/template.rs"]
 mod template;
 
-use vize_carton::{Box, String, Vec, append, cstr, ensure_sufficient_stack};
+use vize_carton::{Box, String, Vec, ensure_sufficient_stack};
 
 use crate::ir::{
     BlockIRNode, ChildRefIRNode, ComponentKind, CreateComponentIRNode, IRProp, IRSlot,
@@ -29,8 +29,9 @@ use self::{
 use super::{
     context::TransformContext,
     control::{
-        transform_for_node, transform_for_node_deferred_parent, transform_for_node_into_parent_with_anchor,
-        transform_if_node, transform_if_node_deferred_parent, transform_if_node_into_parent_with_anchor,
+        transform_for_node, transform_for_node_deferred_parent,
+        transform_for_node_into_parent_with_anchor, transform_if_node,
+        transform_if_node_deferred_parent, transform_if_node_into_parent_with_anchor,
     },
     directive::transform_directive,
     text::{transform_interpolation, transform_text, transform_text_children},
@@ -124,6 +125,7 @@ pub(crate) fn transform_element<'a>(
     }
 
     let element_id = ctx.next_id();
+    ctx.register_element(element_id, &el.loc);
 
     match el.tag_type {
         ElementType::Element => {
