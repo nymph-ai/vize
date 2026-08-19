@@ -6,7 +6,7 @@ use oxc_span::SourceType;
 use sha2::{Digest, Sha256};
 use vize_atelier_syrinx::{
     BindingKind, SyrinxCompileOptions, SyrinxRsxOptions, compile_syrinx, compile_syrinx_checked,
-    compile_syrinx_rsx,
+    compile_syrinx_rsx, measure_rsx_coverage,
 };
 
 const TABLE: &str = r#"<script setup>
@@ -426,6 +426,70 @@ fn checked_emit_contains_only_native_rsx_and_coverage() {
     let artifact = compile_syrinx_checked(TABLE, rsx_options()).expect("table should classify");
     assert_eq!(artifact.classification.summary.rejected_sites, 0);
     assert!(artifact.rsx.rust_source.contains("rsx!"));
+}
+
+#[test]
+fn direct_v_for_child_keeps_local_reactivity_for_arbitrary_item_fields_and_classes() {
+    let source = r#"<script setup>
+import { ref } from 'vue'
+const props = defineProps({ entries: Array })
+const hovered = ref(null)
+</script>
+<template>
+  <article>
+    <button
+      v-for="entry in props.entries"
+      :key="entry.key"
+      :class="{ 'tx-body': true, lit: hovered.value === entry.key }"
+      @mouseenter="hovered = entry.key"
+    >{{ entry.label }}</button>
+  </article>
+</template>
+"#;
+    let artifact = compile_syrinx_rsx(source, rsx_options())
+        .expect("direct loop children must lower component-local state natively");
+    assert!(artifact.rust_source.contains(
+        "if hovered.read().as_deref() == Some(item_1.key.as_str()) { \"tx-body lit\".to_owned() } else { \"tx-body\".to_owned() }"
+    ));
+    assert!(
+        artifact
+            .rust_source
+            .contains("let value = item_1.key.clone(); move |_| hovered.set(Some(value.clone()))")
+    );
+    assert!(!artifact.rust_source.contains("pub attribute_"));
+    assert!(!artifact.rust_source.contains("pub event_"));
+
+    let coverage = measure_rsx_coverage(source, rsx_options())
+        .expect("fully native loop reactivity should remain measurable");
+    assert_eq!(coverage.summary.rejected_sites, 0);
+    assert_eq!(coverage.summary.render_compiled_percent, 100.0);
+}
+
+#[test]
+fn reactive_loop_fallthrough_is_rejected_even_when_the_binding_compiles_elsewhere() {
+    let source = r#"<script setup>
+import { ref } from 'vue'
+const props = defineProps({ entries: Array })
+const hovered = ref(null)
+</script>
+<template>
+  <p v-if="hovered">active</p>
+  <button
+    v-for="entry in props.entries"
+    :key="entry.id"
+    :class="hovered.startsWith(entry.id)"
+    @mouseenter="hovered = entry.id"
+  >{{ entry.label }}</button>
+</template>
+"#;
+    let error = compile_syrinx_rsx(source, rsx_options())
+        .expect_err("component-local reactive expressions must never become host model fields");
+    assert!(error.diagnostics.iter().any(|diagnostic| {
+        diagnostic.code == "SYRINX_RSX_REACTIVE_LOWERING_REQUIRED"
+            && diagnostic.message.contains("hovered")
+            && diagnostic.message.contains("startsWith")
+    }));
+    assert!(measure_rsx_coverage(source, rsx_options()).is_err());
 }
 
 #[test]
