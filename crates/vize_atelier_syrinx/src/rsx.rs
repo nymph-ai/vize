@@ -403,8 +403,7 @@ pub fn compile_syrinx_rsx(
         reactive_bindings
             .iter()
             .find(|name| {
-                contains_identifier(&hook.expression, name)
-                    && !artifact.compiled_bindings.contains(name)
+                contains_identifier(&hook.expression, name) && !hook.field.starts_with("native_")
             })
             .map(|name| (hook, name))
     });
@@ -1317,30 +1316,13 @@ impl RsxEmitter {
             }
         }
 
-        if expression.contains("sparkle:") && expression.contains(&format!("{value_alias}.id")) {
-            let state = self
-                .script
-                .refs
-                .iter()
-                .find(|(name, binding)| {
-                    binding.kind == RefKind::OptionalString && expression.contains(name.as_str())
-                })?
-                .0
-                .clone();
+        if let Some((state, property, base, active)) =
+            lower_list_class_expression(expression, &value_alias, &self.script.refs)
+        {
             self.used_bindings.insert(state.clone());
-            self.lists[list_index].data_fields.insert("id".to_owned());
-            let base = if expression.contains("slice-cell") {
-                "slice-cell"
-            } else {
-                ""
-            };
-            let active = if base.is_empty() {
-                "sparkle"
-            } else {
-                "slice-cell sparkle"
-            };
+            self.lists[list_index].data_fields.insert(property.clone());
             return Some(format!(
-                "if {state}.read().as_deref() == Some({item}.id.as_str()) {{ {active:?}.to_owned() }} else {{ {base:?}.to_owned() }}"
+                "if {state}.read().as_deref() == Some({item}.{property}.as_str()) {{ {active:?}.to_owned() }} else {{ {base:?}.to_owned() }}"
             ));
         }
 
@@ -1371,17 +1353,25 @@ impl RsxEmitter {
                 if binding.kind != RefKind::OptionalString {
                     continue;
                 }
-                let prefix = format!("{state}.value = {value_alias}.id");
-                if action == prefix {
+                let assignment = action
+                    .strip_prefix(&format!("{state}.value = {value_alias}."))
+                    .or_else(|| action.strip_prefix(&format!("{state} = {value_alias}.")));
+                if let Some(property) = assignment.filter(|value| is_rust_identifier(value)) {
                     self.used_bindings.insert(state.clone());
-                    self.lists[list_index].data_fields.insert("id".to_owned());
+                    self.lists[list_index]
+                        .data_fields
+                        .insert(property.to_owned());
                     return Some(format!(
-                        "{{ let value = {item}.id.clone(); move |_| {state}.set(Some(value.clone())) }}"
+                        "{{ let value = {item}.{property}.clone(); move |_| {state}.set(Some(value.clone())) }}"
                     ));
                 }
             }
             for (setter, state) in &self.script.setters {
-                if action == format!("{setter}({value_alias}.id)")
+                let property = action
+                    .strip_prefix(&format!("{setter}({value_alias}."))
+                    .and_then(|value| value.strip_suffix(')'))
+                    .filter(|value| is_rust_identifier(value));
+                if let Some(property) = property
                     && self
                         .script
                         .refs
@@ -1391,9 +1381,11 @@ impl RsxEmitter {
                     let state = state.clone();
                     self.used_bindings.insert(setter.clone());
                     self.used_bindings.insert(state.clone());
-                    self.lists[list_index].data_fields.insert("id".to_owned());
+                    self.lists[list_index]
+                        .data_fields
+                        .insert(property.to_owned());
                     return Some(format!(
-                        "{{ let value = {item}.id.clone(); move |_| {state}.set(Some(value.clone())) }}"
+                        "{{ let value = {item}.{property}.clone(); move |_| {state}.set(Some(value.clone())) }}"
                     ));
                 }
             }
@@ -2130,6 +2122,78 @@ fn js_string_literal(value: &str) -> Option<String> {
     } else {
         None
     }
+}
+
+fn lower_list_class_expression(
+    expression: &str,
+    value_alias: &str,
+    refs: &BTreeMap<String, RefBinding>,
+) -> Option<(String, String, String, String)> {
+    if let Some((condition, branches)) = expression.split_once(" ? ") {
+        let (when_true, when_false) = branches.split_once(" : ")?;
+        let (state, property) = list_optional_string_comparison(condition, value_alias, refs)?;
+        return Some((
+            state,
+            property,
+            js_string_literal(when_false.trim())?,
+            js_string_literal(when_true.trim())?,
+        ));
+    }
+
+    let object = expression.strip_prefix('{')?.strip_suffix('}')?.trim();
+    let mut base = Vec::new();
+    let mut conditional = None;
+    for entry in object.split(',') {
+        let (class, value) = entry.split_once(':')?;
+        let class = js_string_literal(class.trim()).unwrap_or_else(|| class.trim().to_owned());
+        if value.trim() == "true" {
+            base.push(class);
+        } else if let Some((state, property)) =
+            list_optional_string_comparison(value.trim(), value_alias, refs)
+        {
+            if conditional.is_some() {
+                return None;
+            }
+            conditional = Some((state, property, class));
+        } else {
+            return None;
+        }
+    }
+    let (state, property, active_class) = conditional?;
+    let base = base.join(" ");
+    let active = if base.is_empty() {
+        active_class
+    } else {
+        format!("{base} {active_class}")
+    };
+    Some((state, property, base, active))
+}
+
+fn list_optional_string_comparison(
+    expression: &str,
+    value_alias: &str,
+    refs: &BTreeMap<String, RefBinding>,
+) -> Option<(String, String)> {
+    let (left, right) = expression
+        .split_once(" === ")
+        .or_else(|| expression.split_once(" == "))?;
+    let item_prefix = format!("{value_alias}.");
+    let (state_expression, property) =
+        if let Some(property) = right.trim().strip_prefix(&item_prefix) {
+            (left.trim(), property)
+        } else {
+            (right.trim(), left.trim().strip_prefix(&item_prefix)?)
+        };
+    if !is_rust_identifier(property) {
+        return None;
+    }
+    let mut state = state_expression;
+    while let Some(unwrapped) = state.strip_suffix(".value") {
+        state = unwrapped;
+    }
+    refs.get(state)
+        .filter(|binding| binding.kind == RefKind::OptionalString)?;
+    Some((state.to_owned(), property.to_owned()))
 }
 
 fn rust_string(value: &str) -> String {
