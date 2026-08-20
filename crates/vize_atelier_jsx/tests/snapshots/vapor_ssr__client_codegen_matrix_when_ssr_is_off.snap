@@ -31,7 +31,7 @@ const t2 = _template("<div></div>", true)
 
 export function render(_ctx) {
   const n5 = t2()
-  _setInsertionState(n5, null, true)
+  _setInsertionState(n5, null, 0)
   const n0 = _createIf(() => (cond), () => {
     const n2 = t0()
     return n2
@@ -53,7 +53,7 @@ const t1 = _template("<ul></ul>", true)
 
 export function render(_ctx) {
   const n3 = t1()
-  _setInsertionState(n3, null, true)
+  _setInsertionState(n3, null, 0)
   const n0 = _createFor(() => (items), (_for_item0) => {
     const n2 = t0()
     const x2 = _txt(n2)
@@ -76,12 +76,12 @@ const t3 = _template("<div></div>", true)
 
 export function render(_ctx) {
   const n8 = t3()
-  _setInsertionState(n8, null, true)
+  _setInsertionState(n8, null, 0)
   const n0 = _createIf(() => (a), () => {
     const n2 = t0()
     return n2
   }, () => {
-    _setInsertionState(n8, null, true)
+    _setInsertionState(n8, null, 0)
     return _createIf(() => (b), () => {
       const n4 = t1()
       return n4
