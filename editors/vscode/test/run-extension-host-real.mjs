@@ -1,0 +1,98 @@
+#!/usr/bin/env node
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { runVSCodeCommand } from "@vscode/test-electron";
+
+import {
+  prepareRealVueWorkspace,
+  resolveRealServerPath,
+} from "../../../tools/editor-e2e/real-vue-workspace.mjs";
+import {
+  createVueTypecheckAppPath,
+  materializeCreateVueTypecheckSource,
+} from "../../../tests/_helpers/create-vue-typecheck-patch.ts";
+import { withPinnedFixtureWorkspace } from "../../../tests/_helpers/realworld-patch.ts";
+import { runPackagedExtensionHost } from "./packaged-host-contract.mjs";
+import { readPinnedCreateVueHostResult } from "./pinned-create-vue-host-result.mjs";
+
+const sourceExtensionPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const testDataPath = path.join(sourceExtensionPath, ".vscode-test", "host-smoke-real");
+const extensionTestsPath = path.join(
+  sourceExtensionPath,
+  "test",
+  "suite",
+  "extension-host-real.cjs",
+);
+const vsixPath = path.join(sourceExtensionPath, "dist", "vize.vsix");
+
+const serverPath = resolveRealServerPath();
+
+fs.rmSync(testDataPath, { force: true, recursive: true });
+await withPinnedFixtureWorkspace(
+  {
+    fixtureId: "create-vue",
+    includePaths: [createVueTypecheckAppPath],
+    outsideRepository: true,
+  },
+  async (fixture) => {
+    materializeCreateVueTypecheckSource(fixture);
+    prepareRealVueWorkspace(fixture.workspaceDir, { preserveExisting: true });
+    fixture.write(
+      "tsconfig.json",
+      `${JSON.stringify(
+        {
+          compilerOptions: {
+            module: "ESNext",
+            moduleResolution: "bundler",
+            noEmit: true,
+            strict: true,
+            target: "ES2022",
+          },
+          include: ["src/**/*", "template/bare/typescript/src/**/*.vue"],
+        },
+        null,
+        2,
+      )}\n`,
+    );
+
+    // macOS caps AF_UNIX socket paths at 104 bytes, and VS Code creates its
+    // singleton socket inside the user-data directory. Deep checkouts overflow
+    // the default location, so keep user data in a short temporary directory.
+    const profilePath = fs.mkdtempSync(path.join(os.tmpdir(), "vize-host-real-"));
+    const extensionsPath = path.join(profilePath, "extensions");
+    const resultPath = path.join(profilePath, "pinned-create-vue-host-result.json");
+    const userDataPath = path.join(profilePath, "user-data");
+
+    try {
+      await runPackagedExtensionHost(runVSCodeCommand, {
+        extensionId: "ubugeeei.vize",
+        extensionsPath,
+        extensionTestsPath,
+        hostEnvironment: {
+          ...process.env,
+          VIZE_TEST_PACKAGED_EXTENSIONS_DIR: extensionsPath,
+          VIZE_TEST_PINNED_CREATE_VUE_RESULT_PATH: resultPath,
+          VIZE_TEST_SERVER_PATH: serverPath,
+          VIZE_TEST_SOURCE_EXTENSION_PATH: sourceExtensionPath,
+        },
+        hostTimeoutMs: 300_000,
+        installEnvironment: process.env,
+        installTimeoutMs: 120_000,
+        onOutput: writeCommandOutput,
+        userDataPath,
+        vsixPath,
+        workspacePath: fixture.workspaceDir,
+      });
+      readPinnedCreateVueHostResult(resultPath);
+    } finally {
+      fs.rmSync(profilePath, { force: true, recursive: true });
+    }
+  },
+);
+
+function writeCommandOutput({ stderr, stdout }) {
+  if (stdout) process.stdout.write(stdout);
+  if (stderr) process.stderr.write(stderr);
+}

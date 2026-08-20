@@ -1,0 +1,132 @@
+//! Control flow AST node types.
+//!
+//! Contains if (v-if/v-else-if/v-else), for (v-for),
+//! and text call node definitions.
+
+use vize_carton::{Box, Bump, Vec, ensure_sufficient_stack};
+
+use super::{
+    core::{NodeType, SourceLocation},
+    elements::PropNode,
+    expressions::{CompoundExpressionNode, ExpressionNode},
+    nodes::TemplateChildNode,
+};
+
+/// If node (v-if)
+#[derive(Debug)]
+pub struct IfNode<'a> {
+    pub branches: Vec<'a, IfBranchNode<'a>>,
+    pub loc: SourceLocation,
+}
+
+impl<'a> IfNode<'a> {
+    pub fn new(allocator: &'a Bump, loc: SourceLocation) -> Self {
+        Self {
+            branches: Vec::new_in(allocator),
+            loc,
+        }
+    }
+
+    pub fn node_type(&self) -> NodeType {
+        NodeType::If
+    }
+}
+
+/// If branch node (v-if, v-else-if, v-else)
+#[derive(Debug)]
+pub struct IfBranchNode<'a> {
+    pub condition: Option<ExpressionNode<'a>>,
+    pub children: Vec<'a, TemplateChildNode<'a>>,
+    pub user_key: Option<PropNode<'a>>,
+    pub is_template_if: bool,
+    pub loc: SourceLocation,
+}
+
+impl<'a> IfBranchNode<'a> {
+    pub fn new(
+        allocator: &'a Bump,
+        condition: Option<ExpressionNode<'a>>,
+        loc: SourceLocation,
+    ) -> Self {
+        Self {
+            condition,
+            children: Vec::new_in(allocator),
+            user_key: None,
+            is_template_if: false,
+            loc,
+        }
+    }
+
+    pub fn node_type(&self) -> NodeType {
+        NodeType::IfBranch
+    }
+}
+
+/// Keep teardown of nested structural nodes under the same stack guard as the
+/// compiler passes that traverse them.
+impl Drop for IfBranchNode<'_> {
+    fn drop(&mut self) {
+        if !self.children.is_empty() {
+            ensure_sufficient_stack(|| self.children.clear());
+        }
+    }
+}
+
+/// For node (v-for)
+#[derive(Debug)]
+pub struct ForNode<'a> {
+    pub source: ExpressionNode<'a>,
+    pub value_alias: Option<ExpressionNode<'a>>,
+    pub key_alias: Option<ExpressionNode<'a>>,
+    pub object_index_alias: Option<ExpressionNode<'a>>,
+    pub parse_result: ForParseResult<'a>,
+    pub children: Vec<'a, TemplateChildNode<'a>>,
+    pub loc: SourceLocation,
+}
+
+impl<'a> ForNode<'a> {
+    pub fn node_type(&self) -> NodeType {
+        NodeType::For
+    }
+}
+
+/// A transformed `v-for` can directly contain another control-flow node, so
+/// its compiler-generated field drop would otherwise recurse without a guard.
+impl Drop for ForNode<'_> {
+    fn drop(&mut self) {
+        if !self.children.is_empty() {
+            ensure_sufficient_stack(|| self.children.clear());
+        }
+    }
+}
+
+/// Parsed result for v-for expression
+#[derive(Debug)]
+pub struct ForParseResult<'a> {
+    pub source: ExpressionNode<'a>,
+    pub value: Option<ExpressionNode<'a>>,
+    pub key: Option<ExpressionNode<'a>>,
+    pub index: Option<ExpressionNode<'a>>,
+    pub finalized: bool,
+}
+
+/// Text call node
+#[derive(Debug)]
+pub struct TextCallNode<'a> {
+    pub content: TextCallContent<'a>,
+    pub loc: SourceLocation,
+}
+
+impl<'a> TextCallNode<'a> {
+    pub fn node_type(&self) -> NodeType {
+        NodeType::TextCall
+    }
+}
+
+/// Text call content
+#[derive(Debug)]
+pub enum TextCallContent<'a> {
+    Text(Box<'a, super::elements::TextNode>),
+    Interpolation(Box<'a, super::elements::InterpolationNode<'a>>),
+    Compound(Box<'a, CompoundExpressionNode<'a>>),
+}

@@ -1,0 +1,413 @@
+//! HTML escaping utilities and child/control-flow processing for SSR codegen.
+
+mod destructure;
+
+use vize_atelier_core::{
+    CommentNode, ElementType, ForNode, IfNode, InterpolationNode, PropNode, RuntimeHelper,
+    TemplateChildNode, TextNode,
+};
+
+use super::SsrCodegenContext;
+pub(crate) use destructure::{collect_for_scoped_params, extract_destructure_params};
+use vize_carton::{String, ToCompactString, cstr};
+
+impl<'a> SsrCodegenContext<'a> {
+    /// Process a list of children nodes
+    pub(crate) fn process_children(
+        &mut self,
+        children: &[TemplateChildNode<'a>],
+        as_fragment: bool,
+        disable_nested_fragments: bool,
+        disable_comment: bool,
+    ) {
+        self.process_children_with_fallthrough_attrs(
+            children,
+            as_fragment,
+            disable_nested_fragments,
+            disable_comment,
+            false,
+        );
+    }
+
+    /// Process root-level children and inherit `_attrs` into a single renderable
+    /// root, matching Vue's fallthrough attrs behavior for SSR.
+    pub(crate) fn process_root_children(
+        &mut self,
+        children: &[TemplateChildNode<'a>],
+        as_fragment: bool,
+        disable_nested_fragments: bool,
+        disable_comment: bool,
+    ) {
+        self.process_children_with_fallthrough_attrs(
+            children,
+            as_fragment,
+            disable_nested_fragments,
+            disable_comment,
+            true,
+        );
+    }
+
+    fn process_children_with_fallthrough_attrs(
+        &mut self,
+        children: &[TemplateChildNode<'a>],
+        as_fragment: bool,
+        disable_nested_fragments: bool,
+        disable_comment: bool,
+        inherit_attrs: bool,
+    ) {
+        if as_fragment {
+            self.push_string_part_static("<!--[-->");
+        }
+
+        let fallthrough_child_index = if inherit_attrs && !as_fragment {
+            single_fallthrough_child_index(children)
+        } else {
+            None
+        };
+
+        for (index, child) in children.iter().enumerate() {
+            self.process_child(
+                child,
+                disable_nested_fragments,
+                disable_comment,
+                fallthrough_child_index == Some(index),
+            );
+        }
+
+        if as_fragment {
+            self.push_string_part_static("<!--]-->");
+        }
+    }
+
+    /// Process a single child node
+    pub(crate) fn process_child(
+        &mut self,
+        child: &TemplateChildNode<'a>,
+        disable_nested_fragments: bool,
+        disable_comment: bool,
+        inherit_attrs: bool,
+    ) {
+        match child {
+            TemplateChildNode::Element(el) => {
+                self.process_element_with_fallthrough_attrs(
+                    el,
+                    disable_nested_fragments,
+                    inherit_attrs,
+                );
+            }
+            TemplateChildNode::Text(text) => {
+                self.process_text(text);
+            }
+            TemplateChildNode::Comment(comment) => {
+                if !disable_comment {
+                    self.process_comment(comment);
+                }
+            }
+            TemplateChildNode::Interpolation(interp) => {
+                self.process_interpolation(interp);
+            }
+            TemplateChildNode::If(if_node) => {
+                self.process_if(
+                    if_node,
+                    disable_nested_fragments,
+                    disable_comment,
+                    inherit_attrs,
+                );
+            }
+            TemplateChildNode::For(for_node) => {
+                self.process_for(for_node, disable_nested_fragments);
+            }
+            TemplateChildNode::IfBranch(_) => {
+                // Handled by process_if
+            }
+            TemplateChildNode::TextCall(_) | TemplateChildNode::CompoundExpression(_) => {
+                // These don't appear in SSR since transformText is not used
+            }
+            TemplateChildNode::Hoisted(_) => {
+                // Hoisting is not used in SSR
+            }
+        }
+    }
+
+    /// Process a text node
+    fn process_text(&mut self, text: &TextNode) {
+        self.push_string_part_static(&escape_html(&text.content));
+    }
+
+    /// Process a comment node
+    fn process_comment(&mut self, comment: &CommentNode) {
+        self.push_string_part_static("<!--");
+        self.push_string_part_static(&comment.content);
+        self.push_string_part_static("-->");
+    }
+
+    /// Process an interpolation node ({{ expr }})
+    fn process_interpolation(&mut self, interp: &InterpolationNode) {
+        use vize_atelier_core::ExpressionNode;
+
+        self.use_ssr_helper(RuntimeHelper::SsrInterpolate);
+
+        let exp = match &interp.content {
+            ExpressionNode::Simple(simple) => self.strip_ctx_for_scoped_params(&simple.content),
+            ExpressionNode::Compound(_) => "_ctx.value".to_compact_string(), // placeholder
+        };
+
+        self.push_string_part_dynamic(&cstr!("_ssrInterpolate({exp})"));
+    }
+
+    /// Process an if node
+    pub(crate) fn process_if(
+        &mut self,
+        if_node: &IfNode<'a>,
+        disable_nested_fragments: bool,
+        disable_comment: bool,
+        inherit_attrs: bool,
+    ) {
+        // Flush current push before if statement
+        self.flush_push();
+
+        for (i, branch) in if_node.branches.iter().enumerate() {
+            self.push_indent();
+
+            if i == 0 {
+                // First branch: if
+                self.push("if (");
+                if let Some(condition) = &branch.condition {
+                    self.push_expression(condition);
+                }
+                self.push(") {\n");
+            } else if branch.condition.is_some() {
+                // else-if
+                self.push("} else if (");
+                if let Some(condition) = &branch.condition {
+                    self.push_expression(condition);
+                }
+                self.push(") {\n");
+            } else {
+                // else
+                self.push("} else {\n");
+            }
+
+            self.indent_level += 1;
+
+            // Check if branch needs fragment
+            let needs_fragment =
+                !disable_nested_fragments && rendered_child_count(&branch.children) > 1;
+
+            self.process_children_with_fallthrough_attrs(
+                &branch.children,
+                needs_fragment,
+                disable_nested_fragments,
+                disable_comment,
+                inherit_attrs,
+            );
+            self.flush_push();
+
+            self.indent_level -= 1;
+        }
+
+        // If no else branch, emit empty comment
+        if if_node.branches.iter().all(|b| b.condition.is_some()) {
+            self.push_indent();
+            self.push("} else {\n");
+            self.indent_level += 1;
+            self.push_string_part_static("<!---->");
+            self.flush_push();
+            self.indent_level -= 1;
+        }
+
+        self.push_indent();
+        self.push("}\n");
+    }
+
+    /// Process a for node
+    pub(crate) fn process_for(&mut self, for_node: &ForNode<'a>, disable_nested_fragments: bool) {
+        // Flush current push before for statement
+        self.flush_push();
+
+        self.use_ssr_helper(RuntimeHelper::SsrRenderList);
+
+        // Fragment markers for v-for
+        if !disable_nested_fragments {
+            self.push_indent();
+            self.push("_push(`<!--[-->`)\n");
+        }
+
+        self.push_indent();
+        self.push("_ssrRenderList(");
+        self.push_expression(&for_node.source);
+        self.push(", (");
+
+        // Value alias
+        if let Some(value) = &for_node.value_alias {
+            self.push_expression(value);
+        }
+        // Key alias
+        if let Some(key) = &for_node.key_alias {
+            self.push(", ");
+            self.push_expression(key);
+        }
+        // Index alias
+        if let Some(index) = &for_node.object_index_alias {
+            self.push(", ");
+            self.push_expression(index);
+        }
+
+        self.push(") => {\n");
+        self.indent_level += 1;
+
+        self.push_scoped_params(collect_for_scoped_params(for_node));
+
+        // Process for body
+        let needs_fragment = !disable_nested_fragments
+            && (rendered_child_count(&for_node.children) > 1
+                || has_keyed_template_v_for_child(for_node));
+        self.process_children(&for_node.children, needs_fragment, true, false);
+        self.flush_push();
+
+        self.pop_scoped_params();
+
+        self.indent_level -= 1;
+        self.push_indent();
+        self.push("})\n");
+
+        // Closing fragment marker
+        if !disable_nested_fragments {
+            self.push_indent();
+            self.push("_push(`<!--]-->`)\n");
+        }
+    }
+
+    /// Push an expression node
+    pub(crate) fn push_expression(&mut self, expr: &vize_atelier_core::ExpressionNode) {
+        use vize_atelier_core::ExpressionNode;
+
+        match expr {
+            ExpressionNode::Simple(simple) => {
+                let content = self.strip_ctx_for_scoped_params(&simple.content);
+                self.push(&content);
+            }
+            ExpressionNode::Compound(compound) => {
+                // Flatten compound expression
+                let mut content = String::default();
+                for child in &compound.children {
+                    use vize_atelier_core::CompoundExpressionChild;
+                    match child {
+                        CompoundExpressionChild::Simple(s) => content.push_str(&s.content),
+                        CompoundExpressionChild::String(s) => content.push_str(s),
+                        CompoundExpressionChild::Symbol(helper) => {
+                            content.push('_');
+                            content.push_str(helper.name());
+                        }
+                        _ => {}
+                    }
+                }
+                let content = self.strip_ctx_for_scoped_params(&content);
+                self.push(&content);
+            }
+        }
+    }
+}
+
+/// Escape HTML special characters
+pub(crate) fn escape_html(s: &str) -> String {
+    let mut result = String::with_capacity(s.len());
+    for c in s.chars() {
+        match c {
+            '&' => result.push_str("&amp;"),
+            '<' => result.push_str("&lt;"),
+            '>' => result.push_str("&gt;"),
+            '"' => result.push_str("&quot;"),
+            '\'' => result.push_str("&#39;"),
+            _ => result.push(c),
+        }
+    }
+    result
+}
+
+/// Escape HTML attribute value
+pub(crate) fn escape_html_attr(s: &str) -> String {
+    let mut result = String::with_capacity(s.len());
+    for c in s.chars() {
+        match c {
+            '&' => result.push_str("&amp;"),
+            '"' => result.push_str("&quot;"),
+            _ => result.push(c),
+        }
+    }
+    result
+}
+
+fn single_fallthrough_child_index(children: &[TemplateChildNode]) -> Option<usize> {
+    let mut index = None;
+
+    for (current_index, child) in children.iter().enumerate() {
+        if !is_fallthrough_root_candidate(child) {
+            continue;
+        }
+
+        if index.is_some() {
+            return None;
+        }
+        index = Some(current_index);
+    }
+
+    index
+}
+
+fn is_fallthrough_root_candidate(child: &TemplateChildNode) -> bool {
+    matches!(
+        child,
+        TemplateChildNode::Element(_) | TemplateChildNode::If(_)
+    )
+}
+
+fn rendered_child_count(children: &[TemplateChildNode]) -> usize {
+    children
+        .iter()
+        .map(|child| match child {
+            TemplateChildNode::Element(el) if el.tag_type == ElementType::Template => {
+                rendered_child_count(&el.children)
+            }
+            _ => 1,
+        })
+        .sum()
+}
+
+fn has_keyed_template_v_for_child(for_node: &ForNode) -> bool {
+    if for_node.children.len() != 1 {
+        return false;
+    }
+
+    let TemplateChildNode::Element(el) = &for_node.children[0] else {
+        return false;
+    };
+
+    el.tag_type == ElementType::Template
+        && el.props.iter().any(is_key_prop)
+        && !has_single_plain_element_child(el)
+}
+
+fn has_single_plain_element_child(el: &vize_atelier_core::ElementNode) -> bool {
+    if el.children.len() != 1 {
+        return false;
+    }
+
+    matches!(
+        &el.children[0],
+        TemplateChildNode::Element(child_el) if child_el.tag_type == ElementType::Element
+    )
+}
+
+fn is_key_prop(prop: &PropNode) -> bool {
+    match prop {
+        PropNode::Attribute(attr) => attr.name == "key",
+        PropNode::Directive(dir) if dir.name == "bind" => {
+            matches!(
+                &dir.arg,
+                Some(vize_atelier_core::ExpressionNode::Simple(arg)) if arg.content == "key"
+            )
+        }
+        _ => false,
+    }
+}

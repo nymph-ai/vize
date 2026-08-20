@@ -1,0 +1,272 @@
+use vize_carton::{FxHashSet, String, append, cstr};
+use vize_croquis::croquis::{ComponentUsage, PassedProp};
+
+use super::inline_callback_classifier::is_direct_inline_function_prop_value;
+use crate::virtual_ts::helpers::{to_camel_case, to_safe_identifier_fragment};
+
+/// Whether this prop's authored value is an inline function, which is the only
+/// shape that needs the `__VizeCallableProp` fallback.
+///
+/// The name filters mirror [`append_per_prop_aliases`] exactly, because the two
+/// must agree: emitting the helper for a prop the alias loop then skips leaves
+/// it unreferenced, which is `TS6196` on a clean SFC.
+pub(crate) fn is_inline_callback_prop(prop: &PassedProp) -> bool {
+    if prop.name_is_dynamic || prop.name.as_str() == "key" || prop.name.as_str() == "ref" {
+        return false;
+    }
+    prop.is_dynamic
+        && prop
+            .value
+            .as_ref()
+            .is_some_and(|value| is_direct_inline_function_prop_value(value.as_str()))
+}
+
+/// Whether the value contains an inline callback whose standalone generation
+/// would lose contextual typing. Legacy Vue 2 globals use this broader shape
+/// to avoid reporting `TS7006` for values such as `[(value) => !!value]`.
+pub(super) fn contains_inline_function_prop_value(value: &str) -> bool {
+    let value = value.trim();
+    value.contains("=>") || value.starts_with("function") || value.starts_with("async function")
+}
+
+pub(super) fn has_inference_props(usage: &ComponentUsage) -> bool {
+    usage.props.iter().any(|prop| {
+        !prop.name_is_dynamic && prop.name.as_str() != "key" && prop.name.as_str() != "ref"
+    })
+}
+
+/// The target the usage's whole props object literal is checked against: the
+/// child's raw declared props type when Vize emitted one, otherwise its public
+/// props type, for every usage.
+///
+/// That single target is what makes an unbound required prop visible (#3569).
+/// TypeScript's own object-literal elaboration then supplies the rest of the
+/// contract for free, and it is worth spelling out because the whole design
+/// rests on it:
+///
+/// * a literal that satisfies every property it *does* pass, but omits a
+///   required one, is rejected as a whole — `TS2345`, anchored at the argument,
+///   which the mapping puts on the element name.
+/// * a literal that passes a *wrong* value is elaborated instead: TypeScript
+///   reports the offending property and stops, so the missing sibling is **not**
+///   reported a second time. `{ count: 'bad' }` against
+///   `{ count: number; label: string }` is exactly one `TS2322` on `count`,
+///   which is the one-error behavior `vue-tsc` shows and #3569 requires.
+///
+/// The elaborated `TS2322` lands on the literal's key, which maps back to the
+/// authored attribute name — the same position, code and message the per-prop
+/// check produces for that prop, so `dedup_diagnostics` collapses the pair. That
+/// is why no widening is needed to keep a wrong prop from being reported twice.
+///
+/// Checking against the raw type is also the cheapest thing that can be
+/// generated, which is a correctness property of its own here. An earlier
+/// attempt at #3569 inferred the authored object as a generic `A` and picked
+/// between a complete and a relaxed target by testing `A` against a projection
+/// of the child's declared prop keys. On real projects that machinery both blew
+/// past TypeScript's union-complexity limit (`TS2590`) and widened authored
+/// string literals through the `A extends Record<string, unknown>` constraint,
+/// turning `align="start"` into `string` and reporting correct code as wrong.
+/// A checker that only works on toy inputs is worse than the bug it fixes, so
+/// the whole-props target carries no conditional types, no mapped types and no
+/// inference variable.
+///
+/// Consequences, covered by the component-props and project tests:
+///
+/// * `class`, `style`, `data-*`, `aria-*` and anything else the child does not
+///   declare are absorbed by the `Record<string, unknown>` intersection
+///   `__VizePropChecker` applies, which also suppresses object-literal excess
+///   property checking. Fallthrough-only, spread-only and empty usages keep the
+///   behavior they had (#3566, #3444, #3527) because their target never changed.
+/// * Vue's `PublicProps` and the listener props synthesized from `emits` are
+///   part of the child's props type, so authoring one is accepted without any
+///   key-set subtraction — and it does not satisfy the child's own required
+///   props, which the same check still reports.
+/// * the alias does not have to agree with the literal's key set. The literal
+///   skips props whose value does not generate; a `Pick<>` over the authored
+///   names would have had to reproduce that filtering exactly or report phantom
+///   missing properties.
+/// * the declared property types stay intact, which is what contextually types
+///   an inline callback prop: the parameters of `:textConverter="(value) => …"`
+///   draw their signature from the target, so they are not implicit `any`
+///   (`TS7006`), which is what `check_function_props_cli` guards.
+/// * the `exactOptionalPropertyTypes` distinction between "absent" and "present
+///   and `undefined`" survives, because it only exists when a whole object
+///   literal is assigned at once (#3450). With the option off the check is inert
+///   there, because an optional property accepts `undefined` implicitly — which
+///   is also what `vue-tsc` does.
+///
+/// Vize's public `$props` accepts camel- and kebab-case aliases, which requires
+/// camel-case keys to be optional there. The generated props literal already
+/// camelizes every authored static name, so the internal `__vizeRawProps`
+/// marker preserves the declaration's requiredness for this whole-object
+/// check without constructing every camel/kebab key combination. External
+/// components have no marker and continue to use their public `$props`.
+///
+/// Only the **non-generic** branch of `__VizePropChecker` uses this type; a
+/// generic child resolves through its own `__vizeCheck` signature and ignores
+/// it, so the generic inference path is untouched.
+///
+/// Note the code divergence. TypeScript 6, which `vue-tsc` pins, reports the
+/// exact-optional rejection as `TS2379`; the `@typescript/native-preview` build
+/// vize runs reports the identical code against the identical target as `TS2345`
+/// with the same explanation nested one level down. Confirmed by running both
+/// compilers over the same file across five target shapes, including
+/// `vue-tsc`'s own. It is a compiler-version difference, not something the
+/// generated code can steer.
+pub(super) fn append_prop_checker_alias(
+    ts: &mut String,
+    component_type_name: &str,
+    component_ref: &str,
+    idx: usize,
+) {
+    // The listener props synthesized from the child's `emits` join the check
+    // target (#3890): they are part of Vue's public props contract, `vue-tsc`
+    // lists them in the displayed parameter type, and their presence is what
+    // types an authored `:on-save` binding instead of absorbing it as
+    // `unknown`. A component without the marker contributes `{}`.
+    append!(
+        *ts,
+        "  type __{component_type_name}_CheckProps_{idx} = __{component_type_name}_Props_{idx} & __VizeEmitListeners<typeof {component_ref}>;\n",
+    );
+    append!(
+        *ts,
+        "  type __{component_type_name}_Check_{idx} = __VizePropChecker<typeof {component_ref}, __{component_type_name}_CheckProps_{idx}>;\n",
+    );
+}
+
+/// The shared type helpers every per-usage prop check resolves through, emitted
+/// once per template scope that has at least one checkable component usage.
+///
+/// They live here rather than at the call site because
+/// [`append_prop_checker_alias`] is what names them.
+///
+/// The set is deliberately tiny: three aliases, none of them mapped types, none
+/// of them recursive, and none of them growing with the size of the child's
+/// props type. Everything the whole-props check needs is already expressed by
+/// the child's own props type — see [`append_prop_checker_alias`] for why the
+/// key-set arithmetic an earlier #3569 attempt emitted here is neither needed
+/// nor affordable.
+pub(super) fn append_prop_check_helpers(ts: &mut String, usages: &[(usize, &ComponentUsage)]) {
+    ts.push_str("  type __VizeIsAny<T> = 0 extends (1 & T) ? true : false;\n");
+    // The parameter type is written inline so the instantiation stays
+    // anonymous: an aliased mapped type would print as its alias name in the
+    // `TS2345` message, and the whole point of the shape is what it displays.
+    // `{ readonly [K in keyof P]: P[K] }` flattens the declared-props/model/
+    // listener intersection into the single readonly object literal `vue-tsc`
+    // shows (#3890); the homomorphic map preserves per-property optionality,
+    // which keeps the `exactOptionalPropertyTypes` rejection (#3450) and the
+    // contextual typing of inline callback props intact — both re-measured
+    // against the same compiler build. The `Record<string, unknown>` tail
+    // still absorbs fallthrough attrs, suppresses object-literal excess
+    // checks, and keeps the failure an argument-level `TS2345`; against an
+    // exact target the same literal reports member-level `TS2741` instead,
+    // which `vue-tsc` does not. On a realistic props type the flattened
+    // members exceed the display truncation budget, so the tail is elided
+    // exactly the way `vue-tsc`'s own fallthrough members are.
+    ts.push_str(
+        "  type __VizeEmitListeners<C> = C extends { __vizeEmitProps?: infer __E } ? NonNullable<__E> : {};\n",
+    );
+    ts.push_str(
+        "  type __VizePropChecker<C, P> = __VizeIsAny<C> extends true ? (props: { readonly [K in keyof P]: P[K] } & Record<string, unknown>) => void : C extends { __vizeCheck: infer __F } ? (__F extends (...args: any[]) => any ? __F : (props: { readonly [K in keyof P]: P[K] } & Record<string, unknown>) => void) : (props: { readonly [K in keyof P]: P[K] } & Record<string, unknown>) => void;\n",
+    );
+    ts.push_str(
+        "  type __VizePropValue<P, K extends PropertyKey, __V = P extends unknown ? (K extends keyof P ? P[K] : never) : never> = [__V] extends [never] ? unknown : __V;\n",
+    );
+    // Emitted only when a usage actually binds an inline callback, because
+    // nothing else references these aliases and an unreferenced one is
+    // `TS6196`. That reaches
+    // check-server clients as an unmapped hint on an otherwise clean SFC, the
+    // same way the native element aliases did before #3443. The ambient
+    // `declare function` trick those use is not available here: these helpers
+    // are emitted inside a template scope's function body, not at module level.
+    //
+    // A generic child's props come from its `__vizeCheck<T>(props)` call, so
+    // `__X_Props_N` is `Record<string, unknown>` and every per-prop alias
+    // resolves to `unknown`. An inline callback prop annotated `unknown` has
+    // no contextual type, so `strict` reports TS7006 on parameters that are
+    // in fact contextually typed by the checker call below — a new error on
+    // correct code (#3446). `__VizeCallableProp` remains the safe fallback for
+    // components without Vize's resolver. A generic Vize child is invoked once
+    // through `__VizePropsResolver`; `__VizeResolvedProp` then selects the
+    // instantiated callback type so return errors surface inside the authored
+    // body, at the same leaf byte as vue-tsc. `any` is excluded from the
+    // fallback so a genuinely `any` prop stays assignable from a non-function
+    // value, and a resolved non-generic prop type is returned untouched.
+    if usages
+        .iter()
+        .any(|(_, usage)| usage.props.iter().any(is_inline_callback_prop))
+    {
+        ts.push_str(
+            "  type __VizeCallableProp<T> = __VizeIsAny<T> extends true ? T : unknown extends T ? (...args: any[]) => any : T;\n",
+        );
+        ts.push_str(
+            "  type __VizePropsResolver<C> = C extends { __vizeResolveProps?: infer __F } ? (__F extends (...args: any[]) => any ? __F : (props: any) => {}) : (props: any) => {};\n",
+        );
+        ts.push_str(
+            "  type __VizePropsSelector<R> = <A extends Partial<R> & Record<string, unknown>>(props: A) => A;\n",
+        );
+        ts.push_str("  type __VizeMissingProp = { readonly __vizeMissingProp: unique symbol };\n");
+        ts.push_str(
+            "  type __VizeResolvedPropEntry<R, K extends PropertyKey> = R extends unknown ? K extends keyof R ? { value: R[K] } : __VizeMissingProp : never;\n",
+        );
+        ts.push_str(
+            "  type __VizeSelectedProps<R, A> = R extends unknown ? A extends Partial<R> ? R : never : never;\n",
+        );
+        ts.push_str(
+            "  type __VizeResolvedProp<R, A, K extends PropertyKey, F, __S = __VizeSelectedProps<R, A>, __E = __VizeResolvedPropEntry<__S, K>, __A = __VizeResolvedPropEntry<R, K>, __P = Extract<__E, { value: unknown }>> = [__S] extends [never] ? F : [__P] extends [never] ? [Extract<__A, { value: unknown }>] extends [never] ? F : never : __P extends { value: infer V } ? V : never;\n",
+        );
+    }
+}
+
+/// The type a per-prop check is annotated with.
+///
+/// An inline callback prop gets the `__VizeCallableProp` fallback for a child
+/// without `__vizeResolveProps`. Vize generic children replace it at the value
+/// check with their instantiated resolver result. Every other prop keeps the
+/// statically extracted type.
+pub(super) fn prop_alias_type(
+    prop: &PassedProp,
+    component_type_name: &str,
+    idx: usize,
+    camel_prop_name: &str,
+) -> String {
+    let resolved =
+        cstr!("__VizePropValue<__{component_type_name}_Props_{idx}, '{camel_prop_name}'>");
+    if is_inline_callback_prop(prop) {
+        cstr!("__VizeCallableProp<{resolved}>")
+    } else {
+        resolved
+    }
+}
+
+/// One `__X_N_prop_<name>` alias per distinct prop name the usage binds.
+///
+/// A repeated attribute — a static `class` next to a bound `:class` — reuses the
+/// same child prop type, and emitting the alias twice would be a `TS2300` in the
+/// generated module, so the name set is deduplicated.
+pub(super) fn append_per_prop_aliases(
+    ts: &mut String,
+    usage: &ComponentUsage,
+    component_type_name: &str,
+    idx: usize,
+) {
+    let mut declared_aliases = FxHashSet::default();
+    for prop in &usage.props {
+        if prop.name_is_dynamic || prop.name.as_str() == "key" || prop.name.as_str() == "ref" {
+            continue;
+        }
+        if prop.value.is_none() {
+            continue;
+        }
+        let camel_prop_name = to_camel_case(prop.name.as_str());
+        let safe_prop_name = to_safe_identifier_fragment(prop.name.as_str());
+        if !declared_aliases.insert(safe_prop_name.clone()) {
+            continue;
+        }
+        append!(
+            *ts,
+            "  type __{component_type_name}_{idx}_prop_{safe_prop_name} = {};\n",
+            prop_alias_type(prop, component_type_name, idx, &camel_prop_name),
+        );
+    }
+}

@@ -1,0 +1,22 @@
+[package]
+name = "vize_doctor"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Whole-application health analysis contracts for Vize"
+metadata.vize.stability = "experimental"
+
+[features]
+default = []
+application-analysis = ["dep:vize_croquis_cf"]
+
+[dependencies]
+serde.workspace = true
+vize_carton.workspace = true
+vize_croquis_cf = { workspace = true, optional = true }
+
+[dev-dependencies]
+tempfile.workspace = true
+serde_json.workspace = true

@@ -1,0 +1,3331 @@
+{
+  "files": [
+    {
+      "file": "packages/core/src/Accordion/AccordionContent.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Accordion/AccordionHeader.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Accordion/AccordionItem.vue",
+      "diagnostics": [
+        "error:85:3 [TS2322] Type 'ComputedRef<boolean | undefined>' is not assignable to type 'ComputedRef<boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/Accordion/AccordionRoot.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Accordion/AccordionTrigger.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Accordion/story/AccordionAnimated.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Accordion/story/AccordionChromatic.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Accordion/story/AccordionHorizontal.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Accordion/story/AccordionMultiple.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Accordion/story/AccordionSingle.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Accordion/story/AccordionViewport.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Accordion/story/_Accordion.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/AlertDialog/AlertDialogAction.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/AlertDialog/AlertDialogCancel.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/AlertDialog/AlertDialogContent.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/AlertDialog/AlertDialogDescription.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/AlertDialog/AlertDialogOverlay.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/AlertDialog/AlertDialogPortal.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/AlertDialog/AlertDialogRoot.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/AlertDialog/AlertDialogTitle.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/AlertDialog/AlertDialogTrigger.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/AlertDialog/story/AlertDialog.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/AlertDialog/story/_AlertDialog.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/AspectRatio/AspectRatio.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/AspectRatio/story/AspectRatio.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Autocomplete/AutocompleteInput.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Autocomplete/AutocompleteRoot.vue",
+      "diagnostics": [
+        "error:218:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:236:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/Autocomplete/story/_Autocomplete.vue",
+      "diagnostics": [
+        "error:3:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Avatar/AvatarFallback.vue",
+      "diagnostics": [
+        "error:3:26 [TS2307] Cannot find module '@vueuse/shared' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Avatar/AvatarImage.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Avatar/AvatarRoot.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Avatar/story/Avatar.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Avatar/story/_Avatar.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Calendar/CalendarCell.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Calendar/CalendarCellTrigger.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:10:8 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Calendar/CalendarGrid.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Calendar/CalendarGridBody.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Calendar/CalendarGridHead.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Calendar/CalendarGridRow.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Calendar/CalendarHeadCell.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Calendar/CalendarHeader.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Calendar/CalendarHeading.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Calendar/CalendarNext.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Calendar/CalendarPrev.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Calendar/CalendarRoot.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:10:39 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Calendar/story/CalendarChromatic.story.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:4:30 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Calendar/story/CalendarDefault.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Calendar/story/CalendarDir.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Calendar/story/CalendarFixedWeeksForLocales.story.vue",
+      "diagnostics": [
+        "error:2:115 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Calendar/story/CalendarLocales.story.vue",
+      "diagnostics": [
+        "error:2:115 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Calendar/story/CalendarMultiple.story.vue",
+      "diagnostics": [
+        "error:2:30 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Calendar/story/CalendarPopover.story.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:4:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations.",
+        "error:5:55 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Calendar/story/CalendarSelect.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations.",
+        "error:3:69 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:65:12 [TS2322] Type '(newLocale: string) => void' is not assignable to type '(value: AcceptableValue) => any'.\nTypes of parameters 'newLocale' and 'args' are incompatible.\nType 'AcceptableValue' is not assignable to type 'string'.\nType 'null' is not assignable to type 'string'."
+      ]
+    },
+    {
+      "file": "packages/core/src/Calendar/story/CalendarValidation.story.vue",
+      "diagnostics": [
+        "error:3:41 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Calendar/story/CalendarWeek.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Calendar/story/CalendarYearIncrement.story.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:3:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Calendar/story/_Calendar.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Calendar/story/_CalendarMultiple.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Calendar/story/_CalendarPopover.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Calendar/story/_DummyCalendar.vue",
+      "diagnostics": [
+        "error:3:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Checkbox/CheckboxGroupRoot.vue",
+      "diagnostics": [
+        "error:63:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/Checkbox/CheckboxIndicator.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Checkbox/CheckboxRoot.vue",
+      "diagnostics": [
+        "error:49:25 [TS2307] Cannot find module 'ohash' or its corresponding type declarations.",
+        "error:130:3 [TS2322] Type 'ComputedRef<boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nTypes of property 'value' are incompatible.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/Checkbox/story/Checkbox.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Checkbox/story/CheckboxGroup.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Checkbox/story/_Checkbox.vue",
+      "diagnostics": [
+        "error:3:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Checkbox/story/_CheckboxGroup.vue",
+      "diagnostics": [
+        "error:3:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Collapsible/CollapsibleContent.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Collapsible/CollapsibleRoot.vue",
+      "diagnostics": [
+        "error:63:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/Collapsible/CollapsibleTrigger.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Collapsible/story/Collapsible.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Collapsible/story/_Collapsible.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorArea/ColorAreaArea.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorArea/ColorAreaRoot.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorArea/ColorAreaThumb.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorArea/story/ColorAreaDemo.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorArea/story/_ColorArea.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorField/ColorFieldInput.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorField/ColorFieldRoot.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorField/story/ColorFieldDemo.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorField/story/_ColorField.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorPicker/story/ColorPickerDemo.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorPicker/story/_ColorPicker.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorSlider/ColorSliderRoot.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorSlider/ColorSliderThumb.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorSlider/ColorSliderTrack.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorSlider/story/ColorSliderDemo.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorSlider/story/_ColorSlider.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorSlider/story/_ColorSliderCompound.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorSwatch/ColorSwatch.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorSwatch/story/ColorSwatchDemo.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorSwatch/story/_ColorSwatch.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorSwatchPicker/ColorSwatchPickerItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorSwatchPicker/ColorSwatchPickerItemIndicator.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorSwatchPicker/ColorSwatchPickerItemSwatch.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorSwatchPicker/ColorSwatchPickerRoot.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorSwatchPicker/story/ColorSwatchPickerDemo.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ColorSwatchPicker/story/_ColorSwatchPicker.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Combobox/ComboboxAnchor.vue",
+      "diagnostics": [
+        "error:24:12 [TS7053] Element implicitly has an 'any' type because expression of type '\"as\"' can't be used to index type '__DefineProps<ComboboxAnchorProps, never>'.\nProperty 'as' does not exist on type '__DefineProps<ComboboxAnchorProps, never>'."
+      ]
+    },
+    {
+      "file": "packages/core/src/Combobox/ComboboxArrow.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Combobox/ComboboxCancel.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Combobox/ComboboxContent.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Combobox/ComboboxContentImpl.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Combobox/ComboboxEmpty.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Combobox/ComboboxGroup.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Combobox/ComboboxInput.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Combobox/ComboboxItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Combobox/ComboboxItemIndicator.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Combobox/ComboboxLabel.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Combobox/ComboboxPortal.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Combobox/ComboboxRoot.vue",
+      "diagnostics": [
+        "error:223:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:224:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:242:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/Combobox/ComboboxSeparator.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Combobox/ComboboxTrigger.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Combobox/ComboboxViewport.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Combobox/ComboboxVirtualizer.vue",
+      "diagnostics": [
+        "error:6:47 [TS2307] Cannot find module '@tanstack/vue-virtual' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Combobox/story/ComboboxAsync.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Combobox/story/ComboboxAsyncOptions.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations.",
+        "error:14:34 [TS7006] Parameter 'i' implicitly has an 'any' type.",
+        "error:14:108 [TS7006] Parameter 'i' implicitly has an 'any' type."
+      ]
+    },
+    {
+      "file": "packages/core/src/Combobox/story/ComboboxBasic.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Combobox/story/ComboboxCancel.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Combobox/story/ComboboxCustom.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Combobox/story/ComboboxMultiple.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Combobox/story/ComboboxObject.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Combobox/story/ComboboxReactive.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Combobox/story/ComboboxScrolling.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Combobox/story/ComboboxSelectMenu.story.vue",
+      "diagnostics": [
+        "error:3:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Combobox/story/ComboboxVirtual.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations.",
+        "error:62:24 [TS18047] 'option' is possibly 'null'.",
+        "error:62:31 [TS2339] Property 'label' does not exist on type 'string | number | bigint | Record<string, any>'.\nProperty 'label' does not exist on type 'string'."
+      ]
+    },
+    {
+      "file": "packages/core/src/Combobox/story/_Combobox.vue",
+      "diagnostics": [
+        "error:3:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Combobox/story/_ComboboxManualFilter.vue",
+      "diagnostics": [
+        "error:3:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Combobox/story/_ComboboxObject.vue",
+      "diagnostics": [
+        "error:3:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/ConfigProvider/ConfigProvider.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ConfigProvider/_ConfigProvider.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ContextMenu/ContextMenuArrow.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ContextMenu/ContextMenuCheckboxItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ContextMenu/ContextMenuContent.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ContextMenu/ContextMenuGroup.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ContextMenu/ContextMenuItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ContextMenu/ContextMenuItemIndicator.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ContextMenu/ContextMenuLabel.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ContextMenu/ContextMenuPortal.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ContextMenu/ContextMenuRadioGroup.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ContextMenu/ContextMenuRadioItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ContextMenu/ContextMenuRoot.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ContextMenu/ContextMenuSeparator.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ContextMenu/ContextMenuSub.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ContextMenu/ContextMenuSubContent.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ContextMenu/ContextMenuSubTrigger.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ContextMenu/ContextMenuTrigger.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ContextMenu/story/ContextMenu.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/ContextMenu/story/_ContextMenu.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/DateField/DateFieldInput.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateField/DateFieldRoot.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:180:3 [TS2322] Type 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/DateField/story/DateFieldChromatic.story.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:3:30 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/DateField/story/DateFieldDefault.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateField/story/DateFieldGranular.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateField/story/DateFieldInvalid.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateField/story/DateFieldLocales.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateField/story/_DateField.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/DatePicker/DatePickerAnchor.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DatePicker/DatePickerArrow.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DatePicker/DatePickerCalendar.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:3:28 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/DatePicker/DatePickerCell.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DatePicker/DatePickerCellTrigger.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DatePicker/DatePickerClose.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DatePicker/DatePickerContent.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DatePicker/DatePickerField.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/DatePicker/DatePickerGrid.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DatePicker/DatePickerGridBody.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DatePicker/DatePickerGridHead.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DatePicker/DatePickerGridRow.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DatePicker/DatePickerHeadCell.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DatePicker/DatePickerHeader.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DatePicker/DatePickerHeading.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DatePicker/DatePickerInput.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DatePicker/DatePickerNext.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DatePicker/DatePickerPrev.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DatePicker/DatePickerRoot.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:171:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:175:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/DatePicker/DatePickerTrigger.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DatePicker/story/DatePickerChromatic.story.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:5:30 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/DatePicker/story/DatePickerDefault.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/DatePicker/story/DatePickerGranular.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DatePicker/story/DatePickerValidation.story.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:3:41 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/DatePicker/story/_DatePicker.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/DatePicker/story/_DummyDatePicker.vue",
+      "diagnostics": [
+        "error:3:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/DateRangeField/DateRangeFieldInput.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateRangeField/DateRangeFieldRoot.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:229:3 [TS2322] Type 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:239:3 [TS2322] Type 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/DateRangeField/story/DateRangeFieldChromatic.story.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:4:57 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/DateRangeField/story/DateRangeFieldDefault.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateRangeField/story/DateRangeFieldGranular.story.vue",
+      "diagnostics": [
+        "error:2:34 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/DateRangeField/story/DateRangeFieldValidation.story.vue",
+      "diagnostics": [
+        "error:2:15 [TS2305] Module '\"@/shared/date\"' has no exported member 'Matcher'.",
+        "error:3:30 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:10:38 [TS7006] Parameter 'date' implicitly has an 'any' type."
+      ]
+    },
+    {
+      "file": "packages/core/src/DateRangeField/story/_DateRangeField.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/DateRangeField/story/_DummyDateRangeField.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/DateRangePickerAnchor.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/DateRangePickerArrow.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/DateRangePickerCalendar.vue",
+      "diagnostics": [
+        "error:2:28 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/DateRangePickerCell.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/DateRangePickerCellTrigger.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/DateRangePickerClose.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/DateRangePickerContent.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/DateRangePickerField.vue",
+      "diagnostics": [
+        "error:2:28 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/DateRangePickerGrid.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/DateRangePickerGridBody.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/DateRangePickerGridHead.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/DateRangePickerGridRow.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/DateRangePickerHeadCell.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/DateRangePickerHeader.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/DateRangePickerHeading.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/DateRangePickerInput.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/DateRangePickerNext.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/DateRangePickerPrev.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/DateRangePickerRoot.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:190:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:194:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/DateRangePickerTrigger.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/story/DateRangePickerChromatic.story.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:4:34 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/story/DateRangePickerDefault.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/story/DateRangePickerGranular.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/story/DateRangePickerValidation.story.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:3:45 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/story/_DateRangePicker.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/DateRangePicker/story/_DummyDateRangePicker.vue",
+      "diagnostics": [
+        "error:3:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Dialog/DialogClose.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Dialog/DialogContent.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Dialog/DialogContentImpl.vue",
+      "diagnostics": [
+        "error:61:5 [TS2591] Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig."
+      ]
+    },
+    {
+      "file": "packages/core/src/Dialog/DialogContentModal.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Dialog/DialogContentNonModal.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Dialog/DialogDescription.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Dialog/DialogOverlay.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Dialog/DialogOverlayImpl.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Dialog/DialogPortal.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Dialog/DialogRoot.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Dialog/DialogTitle.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Dialog/DialogTrigger.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Dialog/story/Dialog.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Dialog/story/DialogExternalTrigger.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Dialog/story/DialogProgrammatic.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Dialog/story/DialogProgrammaticClose.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Dialog/story/DialogWithDropdown.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Dialog/story/_Dialog.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/DismissableLayer/DismissableLayer.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DismissableLayer/DismissableLayerBranch.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DismissableLayer/story/DismissableLayerBasic.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DismissableLayer/story/DismissableLayerDialog.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DismissableLayer/story/DismissableLayerPopoverNested.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DismissableLayer/story/_DismissableBox.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DismissableLayer/story/_DismissableLayer.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DismissableLayer/story/_DummyDialog.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DismissableLayer/story/_DummyPopover.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DropdownMenu/DropdownMenuArrow.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DropdownMenu/DropdownMenuCheckboxItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DropdownMenu/DropdownMenuContent.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DropdownMenu/DropdownMenuFilter.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DropdownMenu/DropdownMenuGroup.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DropdownMenu/DropdownMenuItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DropdownMenu/DropdownMenuItemIndicator.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DropdownMenu/DropdownMenuLabel.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DropdownMenu/DropdownMenuPortal.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DropdownMenu/DropdownMenuRadioGroup.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DropdownMenu/DropdownMenuRadioItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DropdownMenu/DropdownMenuRoot.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DropdownMenu/DropdownMenuSeparator.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DropdownMenu/DropdownMenuSub.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DropdownMenu/DropdownMenuSubContent.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DropdownMenu/DropdownMenuSubTrigger.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DropdownMenu/DropdownMenuTrigger.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/DropdownMenu/story/DropdownMenu.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/DropdownMenu/story/DropdownMenuFilter.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/DropdownMenu/story/_DropdownMenu.vue",
+      "diagnostics": [
+        "error:5:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/DropdownMenu/story/_DropdownMenuWithFilter.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Editable/EditableArea.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Editable/EditableCancelTrigger.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Editable/EditableEditTrigger.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Editable/EditableInput.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Editable/EditablePreview.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Editable/EditableRoot.vue",
+      "diagnostics": [
+        "error:213:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:215:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/Editable/EditableSubmitTrigger.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Editable/story/EditableChromatic.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Editable/story/EditableDefault.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Editable/story/_DummyEditable.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Editable/story/_Editable.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/FocusGuards/FocusGuards.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/FocusScope/FocusScope.vue",
+      "diagnostics": [
+        "error:37:26 [TS2307] Cannot find module '@vueuse/shared' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/FocusScope/story/FocusScopeMultiple.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/HoverCard/HoverCardArrow.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/HoverCard/HoverCardContent.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/HoverCard/HoverCardContentImpl.vue",
+      "diagnostics": [
+        "error:4:25 [TS2307] Cannot find module '@vueuse/shared' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/HoverCard/HoverCardPortal.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/HoverCard/HoverCardRoot.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/HoverCard/HoverCardTrigger.vue",
+      "diagnostics": [
+        "error:38:12 [TS7053] Element implicitly has an 'any' type because expression of type '\"as\"' can't be used to index type 'Omit<__LooseRequired<HoverCardTriggerProps>, \"as\"> & {}'.\nProperty 'as' does not exist on type 'Omit<__LooseRequired<HoverCardTriggerProps>, \"as\"> & {}'."
+      ]
+    },
+    {
+      "file": "packages/core/src/HoverCard/story/HoverCard.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/HoverCard/story/HoverMultiCard.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/HoverCard/story/_HoverCard.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Label/Label.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Label/Label.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Listbox/ListboxContent.vue",
+      "diagnostics": [
+        "error:3:30 [TS2307] Cannot find module '@vueuse/shared' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Listbox/ListboxFilter.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Listbox/ListboxGroup.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Listbox/ListboxGroupLabel.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Listbox/ListboxItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Listbox/ListboxItemIndicator.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Listbox/ListboxRoot.vue",
+      "diagnostics": [
+        "error:361:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:364:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:365:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/Listbox/ListboxVirtualizer.vue",
+      "diagnostics": [
+        "error:15:47 [TS2307] Cannot find module '@tanstack/vue-virtual' or its corresponding type declarations.",
+        "error:18:32 [TS2307] Cannot find module '@tanstack/vue-virtual' or its corresponding type declarations.",
+        "error:20:30 [TS2307] Cannot find module '@vueuse/shared' or its corresponding type declarations.",
+        "error:67:18 [TS7006] Parameter 'index' implicitly has an 'any' type.",
+        "error:78:82 [TS7006] Parameter 'item' implicitly has an 'any' type."
+      ]
+    },
+    {
+      "file": "packages/core/src/Listbox/story/ListboxChromatic.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Listbox/story/ListboxDemo.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Listbox/story/ListboxFilter.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Listbox/story/ListboxVirtual.story.vue",
+      "diagnostics": [
+        "error:30:18 [TS18047] 'option' is possibly 'null'.",
+        "error:30:25 [TS2339] Property 'label' does not exist on type 'string | number | bigint | Record<string, any>'.\nProperty 'label' does not exist on type 'string'.",
+        "error:55:20 [TS18047] 'option' is possibly 'null'.",
+        "error:55:27 [TS2339] Property 'label' does not exist on type 'string | number | bigint | Record<string, any>'.\nProperty 'label' does not exist on type 'string'.",
+        "error:76:20 [TS18047] 'option' is possibly 'null'.",
+        "error:76:27 [TS2339] Property 'label' does not exist on type 'string | number | bigint | Record<string, any>'.\nProperty 'label' does not exist on type 'string'.",
+        "error:97:20 [TS18047] 'option' is possibly 'null'.",
+        "error:97:27 [TS2339] Property 'label' does not exist on type 'string | number | bigint | Record<string, any>'.\nProperty 'label' does not exist on type 'string'.",
+        "error:118:20 [TS18047] 'option' is possibly 'null'.",
+        "error:118:27 [TS2339] Property 'label' does not exist on type 'string | number | bigint | Record<string, any>'.\nProperty 'label' does not exist on type 'string'.",
+        "error:142:20 [TS18047] 'option' is possibly 'null'.",
+        "error:142:27 [TS2339] Property 'label' does not exist on type 'string | number | bigint | Record<string, any>'.\nProperty 'label' does not exist on type 'string'."
+      ]
+    },
+    {
+      "file": "packages/core/src/Listbox/story/_Listbox.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/MenuAnchor.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/MenuArrow.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/MenuCheckboxItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/MenuContent.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/MenuContentImpl.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/MenuGroup.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/MenuItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/MenuItemImpl.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/MenuItemIndicator.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/MenuLabel.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/MenuPortal.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/MenuRadioGroup.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/MenuRadioItem.vue",
+      "diagnostics": [
+        "error:7:30 [TS2307] Cannot find module '@vueuse/shared' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Menu/MenuRoot.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/MenuRootContentModal.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/MenuRootContentNonModal.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/MenuSeparator.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/MenuSub.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/MenuSubContent.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/MenuSubTrigger.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/story/MenuCheckboxItems.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/story/MenuRadioItems.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/story/MenuStyled.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/story/MenuSubMenu.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/story/MenuWithLabels.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/story/_Menu.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/story/_MenuWithAnchor.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/story/_Submenu.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menu/story/_TickIcon.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menubar/MenubarArrow.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menubar/MenubarCheckboxItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menubar/MenubarContent.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menubar/MenubarGroup.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menubar/MenubarItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menubar/MenubarItemIndicator.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menubar/MenubarLabel.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menubar/MenubarMenu.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menubar/MenubarPortal.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menubar/MenubarRadioGroup.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menubar/MenubarRadioItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menubar/MenubarRoot.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menubar/MenubarSeparator.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menubar/MenubarSub.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menubar/MenubarSubContent.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menubar/MenubarSubTrigger.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menubar/MenubarTrigger.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Menubar/story/Menubar.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Menubar/story/_Menubar.vue",
+      "diagnostics": [
+        "error:5:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/MonthPicker/MonthPickerCell.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/MonthPicker/MonthPickerCellTrigger.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:4:65 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/MonthPicker/MonthPickerGrid.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/MonthPicker/MonthPickerGridBody.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/MonthPicker/MonthPickerGridRow.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/MonthPicker/MonthPickerHeader.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/MonthPicker/MonthPickerHeading.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/MonthPicker/MonthPickerNext.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/MonthPicker/MonthPickerPrev.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/MonthPicker/MonthPickerRoot.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/MonthPicker/story/MonthPickerDefault.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/MonthPicker/story/_MonthPicker.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/MonthRangePicker/MonthRangePickerCell.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/MonthRangePicker/MonthRangePickerCellTrigger.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:4:65 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/MonthRangePicker/MonthRangePickerGrid.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/MonthRangePicker/MonthRangePickerGridBody.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/MonthRangePicker/MonthRangePickerGridRow.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/MonthRangePicker/MonthRangePickerHeader.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/MonthRangePicker/MonthRangePickerHeading.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/MonthRangePicker/MonthRangePickerNext.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/MonthRangePicker/MonthRangePickerPrev.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/MonthRangePicker/MonthRangePickerRoot.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/MonthRangePicker/story/MonthRangePickerDefault.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/MonthRangePicker/story/_MonthRangePicker.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/NavigationMenu/NavigationMenuContent.vue",
+      "diagnostics": [
+        "error:16:40 [TS2307] Cannot find module '@vueuse/shared' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/NavigationMenu/NavigationMenuContentImpl.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/NavigationMenu/NavigationMenuIndicator.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/NavigationMenu/NavigationMenuItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/NavigationMenu/NavigationMenuLink.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/NavigationMenu/NavigationMenuList.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/NavigationMenu/NavigationMenuRoot.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/NavigationMenu/NavigationMenuSub.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/NavigationMenu/NavigationMenuTrigger.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/NavigationMenu/NavigationMenuViewport.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/NavigationMenu/story/NavigationMenuAlignment.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/NavigationMenu/story/NavigationMenuBasic.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/NavigationMenu/story/NavigationMenuChromatic.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/NavigationMenu/story/NavigationMenuDemo.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/NavigationMenu/story/NavigationMenuSubmenus.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/NavigationMenu/story/NavigationMenuViewport.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/NavigationMenu/story/_LinkGroup.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/NavigationMenu/story/_NavigationMenu.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/NavigationMenu/story/_NavigationMenuListItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/NavigationMenu/story/_StoryFrame.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/NumberField/NumberFieldDecrement.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/NumberField/NumberFieldIncrement.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/NumberField/NumberFieldInput.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/NumberField/NumberFieldRoot.vue",
+      "diagnostics": [
+        "error:208:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:211:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:212:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:213:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/NumberField/story/NumberField.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/NumberField/story/NumberFieldChromatic.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/NumberField/story/_NumberField.vue",
+      "diagnostics": [
+        "error:3:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Pagination/PaginationEllipsis.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Pagination/PaginationFirst.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Pagination/PaginationLast.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Pagination/PaginationList.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Pagination/PaginationListItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Pagination/PaginationNext.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Pagination/PaginationPrev.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Pagination/PaginationRoot.vue",
+      "diagnostics": [
+        "error:85:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/Pagination/story/PaginationDefault.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Pagination/story/_Pagination.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/PinInput/PinInputInput.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/PinInput/PinInputRoot.vue",
+      "diagnostics": [
+        "error:120:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:121:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:123:3 [TS2322] Type 'Ref<Type | undefined, Type | undefined> | (Ref<any, any> & PinInputType)' is not assignable to type 'Ref<PinInputType, PinInputType>'.\nType 'Ref<Type | undefined, Type | undefined>' is not assignable to type 'Ref<PinInputType, PinInputType>'.\nType 'Type | undefined' is not assignable to type 'PinInputType'.\nType 'undefined' is not assignable to type 'PinInputType'.",
+        "error:125:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/PinInput/story/PinInput.story.vue",
+      "diagnostics": [
+        "error:20:11 [TS2322] Type 'string[]' is not assignable to type 'number[]'.\nType 'string' is not assignable to type 'number'."
+      ]
+    },
+    {
+      "file": "packages/core/src/PinInput/story/PinInputNumeric.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/PinInput/story/_PinInput.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Popover/PopoverAnchor.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Popover/PopoverArrow.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Popover/PopoverClose.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Popover/PopoverContent.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Popover/PopoverContentImpl.vue",
+      "diagnostics": [
+        "error:8:30 [TS2307] Cannot find module '@vueuse/shared' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Popover/PopoverContentModal.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Popover/PopoverContentNonModal.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Popover/PopoverPortal.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Popover/PopoverRoot.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Popover/PopoverTrigger.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Popover/story/CustomArrowSvg.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Popover/story/PopoverBodyLock.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Popover/story/PopoverBoundary.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Popover/story/PopoverCustomAnchor.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Popover/story/PopoverCustomArrow.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Popover/story/PopoverDemo.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Popover/story/PopoverForceMount.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Popover/story/PopoverModality.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Popover/story/PopoverNested.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Popover/story/PopoverProgrammaticClose.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Popover/story/_Popover.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Popper/PopperAnchor.vue",
+      "diagnostics": [
+        "error:2:39 [TS2307] Cannot find module '@floating-ui/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Popper/PopperArrow.vue",
+      "diagnostics": [
+        "error:39:6 [TS2322] Type '(el: HTMLElement) => undefined' is not assignable to type 'VNodeRef | undefined'.\nType '(el: HTMLElement) => undefined' is not assignable to type '(ref: Element | ComponentPublicInstance<{}, {}, {}, {}, {}, {}, {}, {}, false, ComponentOptionsBase<any, any, any, any, any, any, any, any, any, {}, {}, string, {}, {}, {}, string, ComponentProvideOptions>, ... 4 more ..., any> | null, refs: Record<...>) => void'.\nTypes of parameters 'el' and 'ref' are incompatible.\nType 'Element | ComponentPublicInstance<{}, {}, {}, {}, {}, {}, {}, {}, false, ComponentOptionsBase<any, any, any, any, any, any, any, any, any, {}, {}, string, {}, {}, {}, string, ComponentProvideOptions>, ... 4 more ..., any> | null' is not assignable to type 'HTMLElement'.\nType 'null' is not assignable to type 'HTMLElement'."
+      ]
+    },
+    {
+      "file": "packages/core/src/Popper/PopperContent.vue",
+      "diagnostics": [
+        "error:6:8 [TS2307] Cannot find module '@floating-ui/vue' or its corresponding type declarations.",
+        "error:201:8 [TS2307] Cannot find module '@floating-ui/vue' or its corresponding type declarations.",
+        "error:294:17 [TS7031] Binding element 'elements' implicitly has an 'any' type.",
+        "error:294:27 [TS7031] Binding element 'rects' implicitly has an 'any' type.",
+        "error:294:34 [TS7031] Binding element 'availableWidth' implicitly has an 'any' type.",
+        "error:294:50 [TS7031] Binding element 'availableHeight' implicitly has an 'any' type.",
+        "error:335:28 [TS7019] Rest parameter 'args' implicitly has an 'any[]' type."
+      ]
+    },
+    {
+      "file": "packages/core/src/Popper/PopperRoot.vue",
+      "diagnostics": [
+        "error:2:39 [TS2307] Cannot find module '@floating-ui/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Popper/_Popper.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Presence/story/PresenceAnimation.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Presence/story/PresenceBasic.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Presence/story/PresenceTransition.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Presence/story/_Animation.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Presence/story/_Toggle.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Progress/ProgressIndicator.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Progress/ProgressRoot.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Progress/story/Progress.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Progress/story/_Progress.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/RadioGroup/Radio.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/RadioGroup/RadioGroupIndicator.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/RadioGroup/RadioGroupItem.vue",
+      "diagnostics": [
+        "error:23:25 [TS2307] Cannot find module 'ohash' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/RadioGroup/RadioGroupRoot.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/RadioGroup/story/RadioGroup.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/RadioGroup/story/_Radio.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/RadioGroup/story/_RadioGroup.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/RangeCalendar/RangeCalendarCell.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/RangeCalendar/RangeCalendarCellTrigger.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:10:8 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/RangeCalendar/RangeCalendarGrid.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/RangeCalendar/RangeCalendarGridBody.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/RangeCalendar/RangeCalendarGridHead.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/RangeCalendar/RangeCalendarGridRow.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/RangeCalendar/RangeCalendarHeadCell.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/RangeCalendar/RangeCalendarHeader.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/RangeCalendar/RangeCalendarHeading.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/RangeCalendar/RangeCalendarNext.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/RangeCalendar/RangeCalendarPrev.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/RangeCalendar/RangeCalendarRoot.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:9:28 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/RangeCalendar/story/RangeCalendarChromatic.story.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:4:59 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/RangeCalendar/story/RangeCalendarDefault.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/RangeCalendar/story/RangeCalendarMultiple.story.vue",
+      "diagnostics": [
+        "error:2:30 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/RangeCalendar/story/RangeCalendarPopover.story.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:4:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations.",
+        "error:5:41 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/RangeCalendar/story/RangeCalendarValidation.story.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:3:41 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/RangeCalendar/story/RangeCalendarWeek.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/RangeCalendar/story/_DummyRangeCalendar.vue",
+      "diagnostics": [
+        "error:3:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/RangeCalendar/story/_RangeCalendar.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Rating/RatingItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Rating/RatingItemIndicator.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Rating/RatingRoot.vue",
+      "diagnostics": [
+        "error:96:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/Rating/story/RatingChromatic.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Rating/story/RatingDefault.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Rating/story/_Rating.vue",
+      "diagnostics": [
+        "error:3:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/RovingFocus/RovingFocusGroup.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/RovingFocus/RovingFocusItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/RovingFocus/story/RovingFocusBasic.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/RovingFocus/story/_Button.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/RovingFocus/story/_ButtonGroup.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ScrollArea/ScrollAreaCorner.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ScrollArea/ScrollAreaCornerImpl.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ScrollArea/ScrollAreaRoot.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ScrollArea/ScrollAreaScrollbar.vue",
+      "diagnostics": [
+        "error:74:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:77:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/ScrollArea/ScrollAreaScrollbarAuto.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ScrollArea/ScrollAreaScrollbarGlimpse.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ScrollArea/ScrollAreaScrollbarHover.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ScrollArea/ScrollAreaScrollbarImpl.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ScrollArea/ScrollAreaScrollbarScroll.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ScrollArea/ScrollAreaScrollbarVisible.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ScrollArea/ScrollAreaScrollbarX.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ScrollArea/ScrollAreaScrollbarY.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ScrollArea/ScrollAreaThumb.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ScrollArea/ScrollAreaViewport.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ScrollArea/story/ScrollAreaBasic.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ScrollArea/story/ScrollAreaChromatic.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ScrollArea/story/ScrollAreaChromaticBoth.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ScrollArea/story/ScrollAreaChromaticHorizontal.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ScrollArea/story/ScrollAreaChromaticVertical.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ScrollArea/story/_ScrollArea.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ScrollArea/story/_ScrollAreaCopy.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ScrollArea/story/_ScrollAreaStory.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Select/BubbleSelect.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Select/SelectArrow.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Select/SelectContent.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Select/SelectContentImpl.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Select/SelectGroup.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Select/SelectIcon.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Select/SelectItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Select/SelectItemAlignedPosition.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Select/SelectItemIndicator.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Select/SelectItemText.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Select/SelectLabel.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Select/SelectPopperPosition.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Select/SelectPortal.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Select/SelectProvider.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Select/SelectRoot.vue",
+      "diagnostics": [
+        "error:93:3 [TS2578] Unused '@ts-expect-error' directive.",
+        "error:168:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:169:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:175:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/Select/SelectScrollButtonImpl.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Select/SelectScrollDownButton.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Select/SelectScrollUpButton.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Select/SelectSeparator.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Select/SelectTrigger.vue",
+      "diagnostics": [
+        "error:21:3 [TS2353] Object literal may only specify known properties, and 'as' does not exist in type '__WithDefaultsArgs<SelectTriggerProps>'.",
+        "error:60:14 [TS7053] Element implicitly has an 'any' type because expression of type '\"as\"' can't be used to index type 'Omit<__LooseRequired<SelectTriggerProps>, \"as\"> & {}'.\nProperty 'as' does not exist on type 'Omit<__LooseRequired<SelectTriggerProps>, \"as\"> & {}'.",
+        "error:71:12 [TS7053] Element implicitly has an 'any' type because expression of type '\"as\"' can't be used to index type 'Omit<__LooseRequired<SelectTriggerProps>, \"as\"> & {}'.\nProperty 'as' does not exist on type 'Omit<__LooseRequired<SelectTriggerProps>, \"as\"> & {}'."
+      ]
+    },
+    {
+      "file": "packages/core/src/Select/SelectValue.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Select/SelectViewport.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Select/story/SelectDemo.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Select/story/SelectForm.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Select/story/SelectWithinDialog.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Select/story/_Select.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Select/story/_SelectItem.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Select/story/_SelectTest.vue",
+      "diagnostics": [
+        "error:3:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Separator/Separator.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Separator/Separator.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Slider/SliderHorizontal.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Slider/SliderImpl.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Slider/SliderRange.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Slider/SliderRoot.vue",
+      "diagnostics": [
+        "error:187:51 [TS2345] Argument of type 'Event' is not assignable to parameter of type 'number'.",
+        "error:188:49 [TS2345] Argument of type 'Event' is not assignable to parameter of type 'number'.",
+        "error:194:54 [TS2339] Property 'key' does not exist on type 'Event'.",
+        "error:195:49 [TS2339] Property 'shiftKey' does not exist on type 'Event'.",
+        "error:195:87 [TS2339] Property 'key' does not exist on type 'Event'.",
+        "error:199:55 [TS18048] 'direction' is possibly 'undefined'."
+      ]
+    },
+    {
+      "file": "packages/core/src/Slider/SliderThumb.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Slider/SliderThumbImpl.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Slider/SliderTrack.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Slider/SliderVertical.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Slider/story/SliderChromatic.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Slider/story/SliderDemo.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Slider/story/SliderExtremes.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Slider/story/_Slider.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Splitter/SplitterGroup.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Splitter/SplitterPanel.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Splitter/SplitterResizeHandle.vue",
+      "diagnostics": [
+        "error:141:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/Splitter/story/SplitterAction.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Splitter/story/SplitterChromatic.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Splitter/story/SplitterCollapsible.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Splitter/story/SplitterConditional.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Splitter/story/SplitterDemo.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Splitter/story/SplitterDirection.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Splitter/story/SplitterOverflow.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Splitter/story/SplitterPersistence.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Splitter/story/SplitterPixelSizing.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Splitter/story/_Splitter.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Stepper/StepperDescription.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Stepper/StepperIndicator.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Stepper/StepperItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Stepper/StepperRoot.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Stepper/StepperSeparator.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Stepper/StepperTitle.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Stepper/StepperTrigger.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Stepper/story/StepperChromatic.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Stepper/story/StepperDefault.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Stepper/story/_DummyStepper.vue",
+      "diagnostics": [
+        "error:3:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Stepper/story/_Stepper.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Switch/Switch.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Switch/SwitchRoot.vue",
+      "diagnostics": [
+        "error:89:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/Switch/SwitchThumb.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Switch/_Switch.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Tabs/TabsContent.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Tabs/TabsIndicator.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Tabs/TabsList.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Tabs/TabsRoot.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Tabs/TabsTrigger.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Tabs/story/Tabs.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Tabs/story/TabsVertical.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Tabs/story/_Tabs.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/TagsInput/TagsInputClear.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/TagsInput/TagsInputInput.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/TagsInput/TagsInputItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/TagsInput/TagsInputItemDelete.vue",
+      "diagnostics": [
+        "error:3:25 [TS2307] Cannot find module 'ohash' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/TagsInput/TagsInputItemText.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/TagsInput/TagsInputRoot.vue",
+      "diagnostics": [
+        "error:227:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:228:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:229:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:231:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/TagsInput/story/TagsInput.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/TagsInput/story/TagsInputCombobox.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/TagsInput/story/TagsInputObject.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/TagsInput/story/_TagsInput.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/TagsInput/story/_TagsInputObject.vue",
+      "diagnostics": [
+        "error:3:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Teleport/Teleport.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/TimeField/TimeFieldInput.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/TimeField/TimeFieldRoot.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:8:79 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:215:3 [TS2322] Type 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/TimeField/story/TimeFieldChromatic.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/TimeField/story/TimeFieldDefault.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/TimeField/story/TimeFieldGranular.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/TimeField/story/TimeFieldInvalid.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/TimeField/story/TimeFieldLocales.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/TimeField/story/_TimeField.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/TimeRangeField/TimeRangeFieldInput.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/TimeRangeField/TimeRangeFieldRoot.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:11:67 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:299:3 [TS2322] Type 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:310:3 [TS2322] Type 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/TimeRangeField/story/TimeRangeFieldChromatic.story.vue",
+      "diagnostics": [
+        "error:4:22 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/TimeRangeField/story/TimeRangeFieldDefault.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/TimeRangeField/story/TimeRangeFieldGranular.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/TimeRangeField/story/TimeRangeFieldValidation.story.vue",
+      "diagnostics": [
+        "error:3:22 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/TimeRangeField/story/_DummyTimeRangeField.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/TimeRangeField/story/_TimeRangeField.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Toast/FocusProxy.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Toast/ToastAction.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Toast/ToastAnnounce.vue",
+      "diagnostics": [
+        "error:3:28 [TS2307] Cannot find module '@vueuse/shared' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Toast/ToastAnnounceExclude.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Toast/ToastClose.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Toast/ToastDescription.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Toast/ToastPortal.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Toast/ToastProvider.vue",
+      "diagnostics": [
+        "error:84:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/Toast/ToastRoot.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Toast/ToastRootImpl.vue",
+      "diagnostics": [
+        "error:4:26 [TS2307] Cannot find module '@vueuse/shared' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Toast/ToastTitle.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Toast/ToastViewport.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Toast/story/ToastDemo.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Toast/story/ToastDemoFromDialog.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Toast/story/ToastDemoKeyChange.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Toast/story/ToastMultiple.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Toast/story/_Toast.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Toggle/Toggle.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Toggle/Toggle.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ToggleGroup/ToggleGroupItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ToggleGroup/ToggleGroupRoot.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/ToggleGroup/story/ToggleGroup.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/ToggleGroup/story/_ToggleGroup.vue",
+      "diagnostics": [
+        "error:3:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Toolbar/ToolbarButton.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Toolbar/ToolbarLink.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Toolbar/ToolbarRoot.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Toolbar/ToolbarSeparator.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Toolbar/ToolbarToggleGroup.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Toolbar/ToolbarToggleItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Toolbar/story/Toolbar.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Toolbar/story/_Toolbar.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Tooltip/TooltipArrow.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Tooltip/TooltipContent.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Tooltip/TooltipContentHoverable.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Tooltip/TooltipContentImpl.vue",
+      "diagnostics": [
+        "error:4:22 [TS2307] Cannot find module 'defu' or its corresponding type declarations.",
+        "error:79:5 [TS2739] Type '{ side: string; sideOffset: number; align: string; avoidCollisions: boolean; collisionBoundary: never[]; collisionPadding: number; arrowPadding: number; sticky: string; hideWhenDetached: boolean; }' is missing the following properties from type 'TooltipContentImplProps': alignOffset, positionStrategy, updatePositionStrategy"
+      ]
+    },
+    {
+      "file": "packages/core/src/Tooltip/TooltipPortal.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Tooltip/TooltipProvider.vue",
+      "diagnostics": [
+        "error:64:30 [TS2307] Cannot find module '@vueuse/shared' or its corresponding type declarations.",
+        "error:100:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:101:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/Tooltip/TooltipRoot.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Tooltip/TooltipTrigger.vue",
+      "diagnostics": [
+        "error:114:12 [TS7053] Element implicitly has an 'any' type because expression of type '\"as\"' can't be used to index type 'Omit<__LooseRequired<TooltipTriggerProps>, \"as\"> & {}'.\nProperty 'as' does not exist on type 'Omit<__LooseRequired<TooltipTriggerProps>, \"as\"> & {}'.",
+        "error:115:24 [TS2339] Property 'asChild' does not exist on type 'Omit<__LooseRequired<TooltipTriggerProps>, \"as\"> & {}'."
+      ]
+    },
+    {
+      "file": "packages/core/src/Tooltip/stories/Tooltip.content.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations.",
+        "error:27:16 [TS2345] Argument of type '{ asChild: true; align: string; side: string; alignOffset: number; ariaLabel: string; sideOffset: number; class: string; }' is not assignable to parameter of type '{ readonly asChild?: boolean | undefined; readonly as?: AsTag | Component | undefined; readonly ariaLabel?: string | undefined; readonly forceMount?: boolean | undefined; ... 13 more ...; readonly updatePositionStrategy: PopperContentProps; } & Record<...>'.\nType '{ asChild: true; align: string; side: string; alignOffset: number; ariaLabel: string; sideOffset: number; class: string; }' is missing the following properties from type '{ readonly asChild?: boolean | undefined; readonly as?: AsTag | Component | undefined; readonly ariaLabel?: string | undefined; readonly forceMount?: boolean | undefined; ... 13 more ...; readonly updatePositionStrategy: PopperContentProps; }': arrowPadding, avoidCollisions, collisionBoundary, collisionPadding, and 4 more.",
+        "error:70:16 [TS2345] Argument of type '{ sideOffset: number; class: string; }' is not assignable to parameter of type '{ readonly asChild?: boolean | undefined; readonly as?: AsTag | Component | undefined; readonly ariaLabel?: string | undefined; readonly forceMount?: boolean | undefined; ... 13 more ...; readonly updatePositionStrategy: PopperContentProps; } & Record<...>'.\nType '{ sideOffset: number; class: string; }' is missing the following properties from type '{ readonly asChild?: boolean | undefined; readonly as?: AsTag | Component | undefined; readonly ariaLabel?: string | undefined; readonly forceMount?: boolean | undefined; ... 13 more ...; readonly updatePositionStrategy: PopperContentProps; }': align, alignOffset, arrowPadding, avoidCollisions, and 7 more."
+      ]
+    },
+    {
+      "file": "packages/core/src/Tooltip/stories/Tooltip.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations.",
+        "error:25:16 [TS2345] Argument of type '{ sideOffset: number; class: string; }' is not assignable to parameter of type '{ readonly asChild?: boolean | undefined; readonly as?: AsTag | Component | undefined; readonly ariaLabel?: string | undefined; readonly forceMount?: boolean | undefined; ... 13 more ...; readonly updatePositionStrategy: PopperContentProps; } & Record<...>'.\nType '{ sideOffset: number; class: string; }' is missing the following properties from type '{ readonly asChild?: boolean | undefined; readonly as?: AsTag | Component | undefined; readonly ariaLabel?: string | undefined; readonly forceMount?: boolean | undefined; ... 13 more ...; readonly updatePositionStrategy: PopperContentProps; }': align, alignOffset, arrowPadding, avoidCollisions, and 7 more.",
+        "error:47:16 [TS2345] Argument of type '{ sideOffset: number; class: string; }' is not assignable to parameter of type '{ readonly asChild?: boolean | undefined; readonly as?: AsTag | Component | undefined; readonly ariaLabel?: string | undefined; readonly forceMount?: boolean | undefined; ... 13 more ...; readonly updatePositionStrategy: PopperContentProps; } & Record<...>'.\nType '{ sideOffset: number; class: string; }' is missing the following properties from type '{ readonly asChild?: boolean | undefined; readonly as?: AsTag | Component | undefined; readonly ariaLabel?: string | undefined; readonly forceMount?: boolean | undefined; ... 13 more ...; readonly updatePositionStrategy: PopperContentProps; }': align, alignOffset, arrowPadding, avoidCollisions, and 7 more."
+      ]
+    },
+    {
+      "file": "packages/core/src/Tooltip/stories/_Tooltip.vue",
+      "diagnostics": [
+        "error:24:10 [TS2345] Argument of type '{ sideOffset: number; class: string; }' is not assignable to parameter of type '{ readonly asChild?: boolean | undefined; readonly as?: AsTag | Component | undefined; readonly ariaLabel?: string | undefined; readonly forceMount?: boolean | undefined; ... 13 more ...; readonly updatePositionStrategy: PopperContentProps; } & Record<...>'.\nType '{ sideOffset: number; class: string; }' is missing the following properties from type '{ readonly asChild?: boolean | undefined; readonly as?: AsTag | Component | undefined; readonly ariaLabel?: string | undefined; readonly forceMount?: boolean | undefined; ... 13 more ...; readonly updatePositionStrategy: PopperContentProps; }': align, alignOffset, arrowPadding, avoidCollisions, and 7 more."
+      ]
+    },
+    {
+      "file": "packages/core/src/Tree/TreeItem.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Tree/TreeRoot.vue",
+      "diagnostics": [
+        "error:120:3 [TS2578] Unused '@ts-expect-error' directive.",
+        "error:261:3 [TS2322] Type 'Ref<T[] | undefined, T[] | undefined>' is not assignable to type 'Ref<any[], any[]>'.\nType 'T[] | undefined' is not assignable to type 'any[]'.\nType 'undefined' is not assignable to type 'any[]'.",
+        "error:263:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:264:3 [TS2322] Type 'Ref<boolean | M | undefined, boolean | M | undefined> | (Ref<any, any> & boolean)' is not assignable to type 'Ref<boolean, boolean>'.\nType 'Ref<boolean | M | undefined, boolean | M | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | M | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:266:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'.",
+        "error:267:3 [TS2322] Type 'Ref<boolean | undefined, boolean | undefined>' is not assignable to type 'Ref<boolean, boolean>'.\nType 'boolean | undefined' is not assignable to type 'boolean'.\nType 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "file": "packages/core/src/Tree/TreeVirtualizer.vue",
+      "diagnostics": [
+        "error:13:47 [TS2307] Cannot find module '@tanstack/vue-virtual' or its corresponding type declarations.",
+        "error:16:32 [TS2307] Cannot find module '@tanstack/vue-virtual' or its corresponding type declarations.",
+        "error:79:16 [TS7006] Parameter 'index' implicitly has an 'any' type.",
+        "error:82:18 [TS7006] Parameter 'index' implicitly has an 'any' type.",
+        "error:93:82 [TS7006] Parameter 'item' implicitly has an 'any' type."
+      ]
+    },
+    {
+      "file": "packages/core/src/Tree/story/TreeAsync.story.vue",
+      "diagnostics": [
+        "error:3:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Tree/story/TreeBasic.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Tree/story/TreeCheckbox.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Tree/story/TreeNested.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/Tree/story/TreeVirtual.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Tree/story/_Tree.vue",
+      "diagnostics": [
+        "error:3:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Tree/story/_TreeNested.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/Viewport/Viewport.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/VisuallyHidden/VisuallyHidden.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/VisuallyHidden/VisuallyHiddenInput.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/VisuallyHidden/VisuallyHiddenInputBubble.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/YearPicker/YearPickerCell.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/YearPicker/YearPickerCellTrigger.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:4:77 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/YearPicker/YearPickerGrid.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/YearPicker/YearPickerGridBody.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/YearPicker/YearPickerGridRow.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/YearPicker/YearPickerHeader.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/YearPicker/YearPickerHeading.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/YearPicker/YearPickerNext.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/YearPicker/YearPickerPrev.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/YearPicker/YearPickerRoot.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/YearPicker/story/YearPickerDefault.story.vue",
+      "diagnostics": [
+        "error:2:22 [TS2307] Cannot find module '@iconify/vue' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/YearPicker/story/_YearPicker.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/YearRangePicker/YearRangePickerCell.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/YearRangePicker/YearRangePickerCellTrigger.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations.",
+        "error:4:77 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/YearRangePicker/YearRangePickerGrid.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/YearRangePicker/YearRangePickerGridBody.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/YearRangePicker/YearRangePickerGridRow.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/YearRangePicker/YearRangePickerHeader.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/YearRangePicker/YearRangePickerHeading.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/YearRangePicker/YearRangePickerNext.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/YearRangePicker/YearRangePickerPrev.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/YearRangePicker/YearRangePickerRoot.vue",
+      "diagnostics": [
+        "error:2:32 [TS2307] Cannot find module '@internationalized/date' or its corresponding type declarations."
+      ]
+    },
+    {
+      "file": "packages/core/src/YearRangePicker/story/YearRangePickerDefault.story.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/YearRangePicker/story/_YearRangePicker.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/shared/component/Arrow.vue",
+      "diagnostics": []
+    },
+    {
+      "file": "packages/core/src/shared/component/BaseSeparator.vue",
+      "diagnostics": []
+    }
+  ],
+  "errorCount": 316,
+  "warningCount": 0,
+  "fileCount": 700
+}

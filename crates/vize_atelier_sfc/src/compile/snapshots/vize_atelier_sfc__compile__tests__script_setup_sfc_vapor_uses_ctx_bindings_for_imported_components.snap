@@ -1,0 +1,30 @@
+---
+source: crates/vize_atelier_sfc/src/compile/tests.rs
+expression: result.code.as_str()
+---
+import { defineVaporComponent as _defineVaporComponent, proxyRefs as _proxyRefs } from 'vue'
+import { createComponentWithFallback as _createComponentWithFallback } from 'vue';
+
+
+function render(_ctx, $props, $emit, $attrs, $slots, $setup) {
+  const _component_FooPanel = _ctx.FooPanel
+  const n0 = _createComponentWithFallback(_component_FooPanel, null, null, true)
+  return n0
+}
+const __vaporRender = render
+import FooPanel from './FooPanel.vue'
+
+
+export default /*@__PURE__*/_defineVaporComponent({
+  __name: 'anonymous',
+  render: __vaporRender,
+  setup(__props, { emit: __emit, attrs: __attrs, slots: __slots }) {
+
+
+const __returned__ = { FooPanel }
+Object.defineProperty(__returned__, '__isScriptSetup', { enumerable: false, value: true })
+const __ctx = _proxyRefs(__returned__)
+return __vaporRender(__ctx, __props, __emit, __attrs, __slots, __returned__)
+}
+
+})

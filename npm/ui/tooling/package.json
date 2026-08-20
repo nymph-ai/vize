@@ -1,0 +1,27 @@
+{
+  "name": "@vizejs/ui-tooling",
+  "version": "0.298.0",
+  "private": true,
+  "description": "Internal source-quality tooling for Vize UI packages",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    "./authoring-gate": "./authoring-gate.ts",
+    "./lint-sfc": "./lint-sfc.ts"
+  },
+  "scripts": {
+    "check": "vp check authoring-gate.ts authoring-gate.test.ts lint-sfc.ts lint-sfc.test.ts",
+    "fmt": "vp fmt --write authoring-gate.ts authoring-gate.test.ts lint-sfc.ts lint-sfc.test.ts",
+    "test": "vp exec node --test authoring-gate.test.ts lint-sfc.test.ts"
+  },
+  "dependencies": {
+    "@vue/compiler-sfc": "catalog:vue-stable"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:typescript",
+    "vite-plus": "catalog:vite-stack"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

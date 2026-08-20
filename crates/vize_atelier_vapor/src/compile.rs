@@ -1,0 +1,293 @@
+//! Top-level Vapor compilation entry points.
+//!
+//! Wires together parsing, the core transform lane, Vapor IR lowering, and
+//! code generation behind the public `compile_vapor*` functions.
+
+use crate::generate::{VaporGenerateOptions, generate_vapor_with_options};
+use crate::ir::RootIRNode;
+use crate::ir_drop::drop_ir_stack_safe;
+use crate::lower as vapor_lower;
+use vize_atelier_core::{
+    CompilerError, Namespace, RootNode,
+    lane::{transform, transform_with_template_syntax_quirks},
+    options::{ParserOptions, TemplateSyntaxMode, TransformOptions},
+    parser::parse_with_options_and_template_syntax,
+};
+use vize_carton::{Bump, String};
+
+/// Vapor compiler options
+#[derive(Debug, Clone, Default)]
+pub struct VaporCompilerOptions {
+    /// Whether to prefix identifiers
+    pub prefix_identifiers: bool,
+    /// Whether in SSR mode
+    pub ssr: bool,
+    /// Binding metadata
+    pub binding_metadata: Option<vize_atelier_core::options::BindingMetadata>,
+    /// Whether to inline
+    pub inline: bool,
+    /// Whether the template targets a custom renderer instead of the DOM.
+    pub custom_renderer: bool,
+    /// Enable experimental Vue in-tag comments (`// ...`) inside opening tags.
+    pub experimental_in_tag_comments: bool,
+    /// Enable experimental `v-match` / `v-case` patterned template desugaring.
+    pub experimental_patterned_template: bool,
+}
+
+/// Vapor compilation result
+#[derive(Debug)]
+pub struct VaporCompileResult {
+    /// Generated code
+    pub code: String,
+    /// Template strings for static parts
+    pub templates: Vec<String>,
+    /// Error messages during compilation
+    pub error_messages: Vec<String>,
+}
+
+/// Parsed and lowered Vapor IR before any renderer-specific JavaScript emit.
+///
+/// This is the stable seam for alternate renderers. Consumers inspect the
+/// transformed template AST and Vapor IR directly; they must not translate or
+/// emulate the JavaScript produced by [`compile_vapor`]. `ir` is `None` when a
+/// fatal parser error prevents lowering.
+#[derive(Debug)]
+pub struct VaporIrCompileResult<'a> {
+    /// Transformed template AST retained for source-exact template emit.
+    pub root: RootNode<'a>,
+    /// Renderer-neutral Vapor operations and effect sites.
+    pub ir: Option<RootIRNode<'a>>,
+    /// Parser diagnostics with source locations.
+    pub parser_diagnostics: std::vec::Vec<CompilerError>,
+    /// Lowering diagnostics produced after template transforms.
+    pub transform_diagnostics: std::vec::Vec<String>,
+}
+
+/// Parse, transform, and lower a Vue template without generating Vapor JS.
+///
+/// The returned AST and IR borrow only from `allocator`, so an alternate
+/// backend can generate immutable templates and guest code in the same call.
+pub fn compile_vapor_ir<'a>(
+    allocator: &'a Bump,
+    source: &'a str,
+    options: VaporCompilerOptions,
+) -> VaporIrCompileResult<'a> {
+    compile_vapor_ir_with_template_syntax(allocator, source, options, TemplateSyntaxMode::Standard)
+}
+
+/// Parse, transform, and lower with an explicit template syntax mode and no JS emit.
+pub fn compile_vapor_ir_with_template_syntax<'a>(
+    allocator: &'a Bump,
+    source: &'a str,
+    options: VaporCompilerOptions,
+    template_syntax: TemplateSyntaxMode,
+) -> VaporIrCompileResult<'a> {
+    vize_carton::ensure_sufficient_stack(|| {
+        compile_vapor_ir_inner_with_stack(allocator, source, options, template_syntax)
+    })
+}
+
+/// Compile a Vue template to Vapor mode
+pub fn compile_vapor<'a>(
+    allocator: &'a Bump,
+    source: &'a str,
+    options: VaporCompilerOptions,
+) -> VaporCompileResult {
+    compile_vapor_inner(allocator, source, options, TemplateSyntaxMode::Standard).0
+}
+
+/// Compile a Vue template to Vapor mode with Vue parser quirk compatibility.
+#[deprecated(note = "use compile_vapor_with_template_syntax instead")]
+pub fn compile_vapor_with_vue_parser_quirks<'a>(
+    allocator: &'a Bump,
+    source: &'a str,
+    options: VaporCompilerOptions,
+) -> VaporCompileResult {
+    compile_vapor_inner(allocator, source, options, TemplateSyntaxMode::Quirks).0
+}
+
+/// Compile a Vue template to Vapor mode with an explicit template syntax mode.
+#[doc(hidden)]
+pub fn compile_vapor_with_template_syntax<'a>(
+    allocator: &'a Bump,
+    source: &'a str,
+    options: VaporCompilerOptions,
+    template_syntax: TemplateSyntaxMode,
+) -> VaporCompileResult {
+    compile_vapor_inner(allocator, source, options, template_syntax).0
+}
+
+/// Compile a Vue template to Vapor mode and return parser diagnostics.
+#[doc(hidden)]
+pub fn compile_vapor_with_diagnostics<'a>(
+    allocator: &'a Bump,
+    source: &'a str,
+    options: VaporCompilerOptions,
+) -> (VaporCompileResult, std::vec::Vec<CompilerError>) {
+    compile_vapor_inner(allocator, source, options, TemplateSyntaxMode::Standard)
+}
+
+/// Compile a Vue template to Vapor mode with Vue parser quirks and return parser diagnostics.
+#[doc(hidden)]
+#[deprecated(note = "use compile_vapor_with_template_syntax_and_diagnostics instead")]
+pub fn compile_vapor_with_vue_parser_quirks_and_diagnostics<'a>(
+    allocator: &'a Bump,
+    source: &'a str,
+    options: VaporCompilerOptions,
+) -> (VaporCompileResult, std::vec::Vec<CompilerError>) {
+    compile_vapor_inner(allocator, source, options, TemplateSyntaxMode::Quirks)
+}
+
+/// Compile a Vue template to Vapor mode with template syntax mode and return parser diagnostics.
+#[doc(hidden)]
+pub fn compile_vapor_with_template_syntax_and_diagnostics<'a>(
+    allocator: &'a Bump,
+    source: &'a str,
+    options: VaporCompilerOptions,
+    template_syntax: TemplateSyntaxMode,
+) -> (VaporCompileResult, std::vec::Vec<CompilerError>) {
+    compile_vapor_inner(allocator, source, options, template_syntax)
+}
+
+fn compile_vapor_inner<'a>(
+    allocator: &'a Bump,
+    source: &'a str,
+    options: VaporCompilerOptions,
+    template_syntax: TemplateSyntaxMode,
+) -> (VaporCompileResult, std::vec::Vec<CompilerError>) {
+    vize_carton::ensure_sufficient_stack(|| {
+        compile_vapor_inner_with_stack(allocator, source, options, template_syntax)
+    })
+}
+
+fn compile_vapor_inner_with_stack<'a>(
+    allocator: &'a Bump,
+    source: &'a str,
+    options: VaporCompilerOptions,
+    template_syntax: TemplateSyntaxMode,
+) -> (VaporCompileResult, std::vec::Vec<CompilerError>) {
+    let lowered =
+        compile_vapor_ir_inner_with_stack(allocator, source, options.clone(), template_syntax);
+    let parser_diagnostics = lowered.parser_diagnostics;
+    let transform_diagnostics = lowered.transform_diagnostics;
+    let root = lowered.root;
+    let Some(ir) = lowered.ir else {
+        let fatal = parser_diagnostics
+            .iter()
+            .filter(|error| !error.is_recoverable())
+            .map(|error| error.message.clone())
+            .collect();
+        drop(root);
+        return (
+            VaporCompileResult {
+                code: String::default(),
+                templates: Vec::new(),
+                error_messages: fatal,
+            },
+            parser_diagnostics,
+        );
+    };
+
+    let result = generate_vapor_with_options(
+        &ir,
+        options.binding_metadata.as_ref(),
+        VaporGenerateOptions {
+            inline: options.inline,
+            ..Default::default()
+        },
+    );
+    drop_ir_stack_safe(ir);
+    drop(root);
+
+    (
+        VaporCompileResult {
+            code: result.code,
+            templates: result.templates,
+            error_messages: transform_diagnostics,
+        },
+        parser_diagnostics,
+    )
+}
+
+fn compile_vapor_ir_inner_with_stack<'a>(
+    allocator: &'a Bump,
+    source: &'a str,
+    options: VaporCompilerOptions,
+    template_syntax: TemplateSyntaxMode,
+) -> VaporIrCompileResult<'a> {
+    // Parse
+    let parser_opts = ParserOptions {
+        is_void_tag: vize_carton::is_void_tag,
+        is_native_tag: Some(vize_carton::is_native_tag),
+        custom_renderer: options.custom_renderer,
+        experimental_in_tag_comments: options.experimental_in_tag_comments,
+        is_pre_tag: |tag| tag == "pre",
+        get_namespace,
+        ..ParserOptions::default()
+    };
+    let (mut root, errors) =
+        parse_with_options_and_template_syntax(allocator, source, parser_opts, template_syntax);
+    let parser_diagnostics = errors.to_vec();
+
+    let fatal: std::vec::Vec<_> = errors.iter().filter(|e| !e.is_recoverable()).collect();
+    if !fatal.is_empty() {
+        return VaporIrCompileResult {
+            root,
+            ir: None,
+            parser_diagnostics,
+            transform_diagnostics: std::vec::Vec::new(),
+        };
+    }
+
+    // Transform to Vapor IR
+    let binding_metadata = options.binding_metadata.clone();
+    let transform_opts = TransformOptions {
+        prefix_identifiers: options.prefix_identifiers,
+        ssr: options.ssr,
+        binding_metadata: binding_metadata.clone(),
+        inline: options.inline,
+        vapor: true,
+        custom_renderer: options.custom_renderer,
+        experimental_patterned_template: options.experimental_patterned_template,
+        ..Default::default()
+    };
+    if template_syntax.is_quirks() {
+        transform_with_template_syntax_quirks(allocator, &mut root, transform_opts, None);
+    } else {
+        transform(allocator, &mut root, transform_opts, None);
+    }
+
+    // Lower to Vapor IR
+    let (ir, transform_diagnostics) =
+        vapor_lower::transform_to_ir_with_diagnostics(allocator, &root, options.custom_renderer);
+
+    VaporIrCompileResult {
+        root,
+        ir: Some(ir),
+        parser_diagnostics,
+        transform_diagnostics,
+    }
+}
+
+fn get_namespace(tag: &str, parent: Option<&str>) -> Namespace {
+    if vize_carton::is_svg_tag(tag) {
+        return Namespace::Svg;
+    }
+    if vize_carton::is_math_ml_tag(tag) {
+        return Namespace::MathMl;
+    }
+
+    if let Some(parent_tag) = parent {
+        if vize_carton::is_svg_tag(parent_tag) && tag != "foreignObject" {
+            return Namespace::Svg;
+        }
+        if vize_carton::is_math_ml_tag(parent_tag)
+            && tag != "annotation-xml"
+            && tag != "foreignObject"
+        {
+            return Namespace::MathMl;
+        }
+    }
+
+    Namespace::Html
+}

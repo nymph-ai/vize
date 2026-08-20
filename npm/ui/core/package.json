@@ -1,0 +1,117 @@
+{
+  "name": "@vizejs/ui",
+  "version": "0.340.0",
+  "description": "Accessible, headless, Native CSS-first UI primitives",
+  "keywords": [
+    "accessibility",
+    "headless",
+    "type-safe",
+    "vize",
+    "vue"
+  ],
+  "homepage": "https://github.com/ubugeeei-prod/vize",
+  "bugs": {
+    "url": "https://github.com/ubugeeei-prod/vize/issues"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ubugeeei-prod/vize.git",
+    "directory": "npm/ui/core"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": [
+    "./dist/*.css"
+  ],
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    },
+    "./button": {
+      "types": "./dist/button.d.mts",
+      "import": "./dist/button.mjs",
+      "default": "./dist/button.mjs"
+    },
+    "./checkbox": {
+      "types": "./dist/checkbox.d.mts",
+      "import": "./dist/checkbox.mjs",
+      "default": "./dist/checkbox.mjs"
+    },
+    "./context": {
+      "types": "./dist/context.d.mts",
+      "import": "./dist/context.mjs",
+      "default": "./dist/context.mjs"
+    },
+    "./controllable-state": {
+      "types": "./dist/controllable-state.d.mts",
+      "import": "./dist/controllable-state.mjs",
+      "default": "./dist/controllable-state.mjs"
+    },
+    "./primitive": {
+      "types": "./dist/primitive.d.mts",
+      "import": "./dist/primitive.mjs",
+      "default": "./dist/primitive.mjs"
+    },
+    "./visually-hidden": {
+      "types": "./dist/visually-hidden.d.mts",
+      "import": "./dist/visually-hidden.mjs",
+      "default": "./dist/visually-hidden.mjs"
+    },
+    "./style.css": "./dist/style.css",
+    "./media": {
+      "types": "./dist/media.d.mts",
+      "import": "./dist/media.mjs",
+      "default": "./dist/media.mjs"
+    },
+    "./media/pdf": {
+      "types": "./dist/media-pdf.d.mts",
+      "import": "./dist/media-pdf.mjs",
+      "default": "./dist/media-pdf.mjs"
+    },
+    "./media/source": {
+      "types": "./dist/media-source.d.mts",
+      "import": "./dist/media-source.mjs",
+      "default": "./dist/media-source.mjs"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vp pack",
+    "dev": "vp pack --watch",
+    "lint:sfc": "vp exec node scripts/lint-sfc.ts src",
+    "pretest": "vp pack && pnpm check:size",
+    "test": "vp test run",
+    "check": "vp check src scripts vite.config.ts",
+    "check:fix": "vp check --fix src scripts vite.config.ts",
+    "check:size": "node scripts/check-size.mjs",
+    "fmt": "vp fmt --write src scripts vite.config.ts"
+  },
+  "devDependencies": {
+    "@tsdown/css": "catalog:content",
+    "@types/node": "catalog:typescript",
+    "@vitejs/plugin-vue": "catalog:vite-stack",
+    "@vizejs/native": "workspace:*",
+    "@vizejs/ui-tooling": "workspace:*",
+    "@vue/test-utils": "catalog:vue-stable",
+    "happy-dom": "catalog:testing",
+    "typescript": "catalog:typescript",
+    "vite": "catalog:vite-stack",
+    "vite-plus": "catalog:vite-stack",
+    "vue": "catalog:vue-stable"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
