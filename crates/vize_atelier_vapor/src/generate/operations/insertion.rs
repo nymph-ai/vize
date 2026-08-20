@@ -7,19 +7,31 @@ pub(super) fn emit_insertion_state(
     ctx: &mut GenerateContext,
     parent: Option<usize>,
     anchor: Option<usize>,
+    logical_index: Option<usize>,
 ) {
     let Some(parent_id) = parent else {
         return;
     };
     ctx.use_helper("setInsertionState");
-    // Signature is (parent, anchor?). `null` means "no anchor" — the runtime
-    // then appends — and the third argument is read as a logical index, not a
-    // flag. Emit the two real forms.
-    match anchor {
-        Some(anchor_id) => {
+    // The third argument is the logical child index used during hydration.
+    // An appending block still needs an explicit null anchor when it carries
+    // an index, otherwise the value would occupy the anchor position.
+    match (anchor, logical_index) {
+        (Some(anchor_id), Some(index)) => ctx.push_line(&cstr!(
+            "_setInsertionState(n{}, n{}, {})",
+            parent_id,
+            anchor_id,
+            index
+        )),
+        (Some(anchor_id), None) => {
             ctx.push_line(&cstr!("_setInsertionState(n{}, n{})", parent_id, anchor_id))
         }
-        None => ctx.push_line(&cstr!("_setInsertionState(n{})", parent_id)),
+        (None, Some(index)) => ctx.push_line(&cstr!(
+            "_setInsertionState(n{}, null, {})",
+            parent_id,
+            index
+        )),
+        (None, None) => ctx.push_line(&cstr!("_setInsertionState(n{})", parent_id)),
     }
 }
 

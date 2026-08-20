@@ -246,6 +246,8 @@ pub struct IfIRNode<'a> {
     pub once: bool,
     pub parent: Option<usize>,
     pub anchor: Option<usize>,
+    /// Logical child position used to adopt the right node during hydration.
+    pub logical_index: Option<usize>,
 }
 
 /// Negative branch of if
@@ -270,6 +272,8 @@ pub struct ForIRNode<'a> {
     pub only_child: bool,
     pub parent: Option<usize>,
     pub anchor: Option<usize>,
+    /// Logical child position used to adopt the right node during hydration.
+    pub logical_index: Option<usize>,
 }
 
 /// Component kind for code generation
@@ -305,6 +309,8 @@ pub struct CreateComponentIRNode<'a> {
     pub v_show: Option<Box<'a, SimpleExpressionNode<'a>>>,
     pub parent: Option<usize>,
     pub anchor: Option<usize>,
+    /// Logical child position used to adopt the right node during hydration.
+    pub logical_index: Option<usize>,
 }
 
 /// IR slot

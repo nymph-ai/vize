@@ -9,6 +9,37 @@ use super::{
 #[path = "component/slots.rs"]
 mod slots;
 
+#[derive(Clone, Copy)]
+pub(super) struct ComponentPlacement {
+    existing_id: Option<usize>,
+    parent: Option<usize>,
+    anchor: Option<usize>,
+    logical_index: Option<usize>,
+    add_return: bool,
+}
+
+impl ComponentPlacement {
+    pub(super) const fn root() -> Self {
+        Self {
+            existing_id: None,
+            parent: None,
+            anchor: None,
+            logical_index: None,
+            add_return: true,
+        }
+    }
+
+    pub(super) const fn child(existing_id: usize, parent: usize, logical_index: usize) -> Self {
+        Self {
+            existing_id: Some(existing_id),
+            parent: Some(parent),
+            anchor: None,
+            logical_index: Some(logical_index),
+            add_return: false,
+        }
+    }
+}
+
 /// Transform a component element into a `CreateComponent` operation.
 ///
 /// This handles slot collection, built-in component kinds, dynamic components,
@@ -18,11 +49,15 @@ pub(super) fn transform_component<'a>(
     ctx: &mut TransformContext<'a>,
     el: &ElementNode<'a>,
     block: &mut BlockIRNode<'a>,
-    existing_id: Option<usize>,
-    parent: Option<usize>,
-    anchor: Option<usize>,
-    add_return: bool,
+    placement: ComponentPlacement,
 ) {
+    let ComponentPlacement {
+        existing_id,
+        parent,
+        anchor,
+        logical_index,
+        add_return,
+    } = placement;
     let tag = el.tag.as_str();
     let kind = match tag {
         "Teleport" => ComponentKind::Teleport,
@@ -276,6 +311,7 @@ pub(super) fn transform_component<'a>(
         v_show: v_show_exp,
         parent,
         anchor,
+        logical_index,
     };
 
     block

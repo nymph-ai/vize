@@ -18,7 +18,7 @@ pub(crate) fn transform_if_node<'a>(
     if_node: &IfNode<'a>,
     block: &mut BlockIRNode<'a>,
 ) {
-    transform_if_node_with_options(ctx, if_node, block, None, None, true);
+    transform_if_node_with_options(ctx, if_node, block, None, None, None, true);
 }
 
 pub(crate) fn transform_if_node_into_parent<'a>(
@@ -27,7 +27,7 @@ pub(crate) fn transform_if_node_into_parent<'a>(
     block: &mut BlockIRNode<'a>,
     parent: usize,
 ) {
-    transform_if_node_into_parent_with_anchor(ctx, if_node, block, parent, None);
+    transform_if_node_into_parent_with_anchor(ctx, if_node, block, parent, None, None);
 }
 
 /// Same, but anchored before a following node in the parent template.
@@ -37,16 +37,26 @@ pub(crate) fn transform_if_node_into_parent_with_anchor<'a>(
     block: &mut BlockIRNode<'a>,
     parent: usize,
     anchor: Option<usize>,
+    logical_index: Option<usize>,
 ) {
-    transform_if_node_with_options(ctx, if_node, block, Some(parent), anchor, false);
+    transform_if_node_with_options(
+        ctx,
+        if_node,
+        block,
+        Some(parent),
+        anchor,
+        logical_index,
+        false,
+    );
 }
 
 pub(crate) fn transform_if_node_deferred_parent<'a>(
     ctx: &mut TransformContext<'a>,
     if_node: &IfNode<'a>,
     block: &mut BlockIRNode<'a>,
+    logical_index: Option<usize>,
 ) {
-    transform_if_node_with_options(ctx, if_node, block, None, None, false);
+    transform_if_node_with_options(ctx, if_node, block, None, None, logical_index, false);
 }
 
 fn transform_if_node_with_options<'a>(
@@ -55,6 +65,7 @@ fn transform_if_node_with_options<'a>(
     block: &mut BlockIRNode<'a>,
     parent: Option<usize>,
     anchor: Option<usize>,
+    logical_index: Option<usize>,
     add_return: bool,
 ) {
     if if_node.branches.is_empty() {
@@ -107,6 +118,7 @@ fn transform_if_node_with_options<'a>(
             &if_node.branches[1..],
             parent,
             anchor,
+            logical_index,
         ))
     } else {
         None
@@ -120,6 +132,7 @@ fn transform_if_node_with_options<'a>(
         once: false,
         parent,
         anchor,
+        logical_index,
     };
 
     block
@@ -136,6 +149,7 @@ pub(crate) fn transform_remaining_branches<'a>(
     branches: &[vize_atelier_core::IfBranchNode<'a>],
     parent: Option<usize>,
     anchor: Option<usize>,
+    logical_index: Option<usize>,
 ) -> NegativeBranch<'a> {
     if branches.is_empty() {
         // This shouldn't happen, but return an empty block just in case
@@ -180,6 +194,7 @@ pub(crate) fn transform_remaining_branches<'a>(
                 &branches[1..],
                 parent,
                 anchor,
+                logical_index,
             ))
         } else {
             None
@@ -193,6 +208,7 @@ pub(crate) fn transform_remaining_branches<'a>(
             once: false,
             parent,
             anchor,
+            logical_index,
         };
 
         NegativeBranch::If(Box::new_in(nested_if, ctx.allocator))
@@ -209,7 +225,7 @@ pub(crate) fn transform_for_node<'a>(
     for_node: &ForNode<'a>,
     block: &mut BlockIRNode<'a>,
 ) {
-    transform_for_node_with_options(ctx, for_node, block, None, None, true);
+    transform_for_node_with_options(ctx, for_node, block, None, None, None, true);
 }
 
 pub(crate) fn transform_for_node_into_parent<'a>(
@@ -218,7 +234,7 @@ pub(crate) fn transform_for_node_into_parent<'a>(
     block: &mut BlockIRNode<'a>,
     parent: usize,
 ) {
-    transform_for_node_into_parent_with_anchor(ctx, for_node, block, parent, None);
+    transform_for_node_into_parent_with_anchor(ctx, for_node, block, parent, None, None);
 }
 
 /// Same, but anchored before a following node in the parent template.
@@ -228,16 +244,26 @@ pub(crate) fn transform_for_node_into_parent_with_anchor<'a>(
     block: &mut BlockIRNode<'a>,
     parent: usize,
     anchor: Option<usize>,
+    logical_index: Option<usize>,
 ) {
-    transform_for_node_with_options(ctx, for_node, block, Some(parent), anchor, false);
+    transform_for_node_with_options(
+        ctx,
+        for_node,
+        block,
+        Some(parent),
+        anchor,
+        logical_index,
+        false,
+    );
 }
 
 pub(crate) fn transform_for_node_deferred_parent<'a>(
     ctx: &mut TransformContext<'a>,
     for_node: &ForNode<'a>,
     block: &mut BlockIRNode<'a>,
+    logical_index: Option<usize>,
 ) {
-    transform_for_node_with_options(ctx, for_node, block, None, None, false);
+    transform_for_node_with_options(ctx, for_node, block, None, None, logical_index, false);
 }
 
 fn transform_for_node_with_options<'a>(
@@ -246,6 +272,7 @@ fn transform_for_node_with_options<'a>(
     block: &mut BlockIRNode<'a>,
     parent: Option<usize>,
     anchor: Option<usize>,
+    logical_index: Option<usize>,
     add_return: bool,
 ) {
     // Allocate for-node ID first (before children consume IDs)
@@ -295,6 +322,7 @@ fn transform_for_node_with_options<'a>(
         only_child: for_node.children.len() == 1,
         parent,
         anchor,
+        logical_index,
     };
 
     block

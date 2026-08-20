@@ -3,7 +3,7 @@
 //! Wires together parsing, the core transform lane, Vapor IR lowering, and
 //! code generation behind the public `compile_vapor*` functions.
 
-use crate::generate::generate_vapor;
+use crate::generate::{VaporGenerateOptions, generate_vapor_with_options};
 use crate::ir::RootIRNode;
 use crate::ir_drop::drop_ir_stack_safe;
 use crate::lower as vapor_lower;
@@ -188,7 +188,14 @@ fn compile_vapor_inner_with_stack<'a>(
         );
     };
 
-    let result = generate_vapor(&ir, options.binding_metadata.as_ref());
+    let result = generate_vapor_with_options(
+        &ir,
+        options.binding_metadata.as_ref(),
+        VaporGenerateOptions {
+            inline: options.inline,
+            ..Default::default()
+        },
+    );
     drop_ir_stack_safe(ir);
     drop(root);
 

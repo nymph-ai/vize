@@ -90,12 +90,10 @@ pub(super) fn emit_render_return(
             }
             output.extend_from_slice(b" }\n");
             output.extend_from_slice(b"Object.defineProperty(__returned__, '__isScriptSetup', { enumerable: false, value: true })\n");
-            output.extend_from_slice(b"const __instance = _getCurrentInstance()\n");
             output.extend_from_slice(b"const __ctx = _proxyRefs(__returned__)\n");
-            output.extend_from_slice(b"if (__instance) __instance.setupState = __ctx\n");
             output.extend_from_slice(b"return ");
             output.extend_from_slice(vapor_render_alias.unwrap_or("render").as_bytes());
-            output.extend_from_slice(b"(__ctx, __props, __emit, __attrs, __slots)\n");
+            output.extend_from_slice(b"(__ctx, __props, __emit, __attrs, __slots, __returned__)\n");
         } else if !setup_bindings.is_empty() {
             if !template.render_fn.is_empty() {
                 output.extend_from_slice(b"const __returned__ = { ");

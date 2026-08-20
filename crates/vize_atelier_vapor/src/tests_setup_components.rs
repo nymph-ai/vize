@@ -75,6 +75,46 @@ fn test_setup_component_tag_binding_matrix_matches_vapor_behavior() {
     );
 }
 
+#[test]
+fn test_inline_static_template_ref_uses_raw_setup_ref_binding() {
+    let allocator = Bump::new();
+    let mut bindings = FxHashMap::default();
+    bindings.insert("host".into(), BindingType::SetupRef);
+    bindings.insert("missing".into(), BindingType::SetupConst);
+
+    let result = compile_vapor(
+        &allocator,
+        r#"<main ref="host"><div ref="missing"></div><aside ref="unbound"></aside></main>"#,
+        VaporCompilerOptions {
+            inline: true,
+            binding_metadata: Some(BindingMetadata {
+                bindings,
+                props_aliases: FxHashMap::default(),
+                is_script_setup: true,
+            }),
+            ..Default::default()
+        },
+    );
+
+    assert!(result.error_messages.is_empty());
+    assert!(result.code.contains("export function render(_ctx, $setup)"));
+    assert!(
+        result.code.contains("_setRef(n2, $setup.host)"),
+        "{}",
+        result.code
+    );
+    assert!(
+        result.code.contains("_setRef(n0, \"missing\")"),
+        "{}",
+        result.code
+    );
+    assert!(
+        result.code.contains("_setRef(n1, \"unbound\")"),
+        "{}",
+        result.code
+    );
+}
+
 // Regression tests for #3072: template references to destructured props must
 // read the render signature's `$props` (aliased destructures through the
 // original prop key), while v-for aliases keep shadowing prop names.

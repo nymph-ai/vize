@@ -261,6 +261,7 @@ pub(crate) fn transform_directive<'a>(
                     once: false,
                     parent: None,
                     anchor: None,
+                    logical_index: None,
                 };
 
                 block
@@ -294,6 +295,7 @@ pub(crate) fn transform_directive<'a>(
                     only_child: false,
                     parent: None,
                     anchor: None,
+                    logical_index: None,
                 };
 
                 block

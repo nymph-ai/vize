@@ -17,7 +17,12 @@ pub(super) fn generate_for(
     element_template_map: &FxHashMap<usize, usize>,
 ) {
     ctx.use_helper("createFor");
-    emit_insertion_state(ctx, for_node.parent, for_node.anchor);
+    emit_insertion_state(
+        ctx,
+        for_node.parent,
+        for_node.anchor,
+        for_node.logical_index,
+    );
 
     let depth = ctx.for_scopes.len();
     let source = if for_node.source.is_static {
@@ -73,7 +78,12 @@ pub(super) fn generate_for(
     );
     ctx.indent();
     if block_requires_parent_insertion_state(&for_node.render) {
-        emit_insertion_state(ctx, for_node.parent, for_node.anchor);
+        emit_insertion_state(
+            ctx,
+            for_node.parent,
+            for_node.anchor,
+            for_node.logical_index,
+        );
     }
     ctx.push_component_scope();
     generate_block(ctx, &for_node.render, element_template_map);

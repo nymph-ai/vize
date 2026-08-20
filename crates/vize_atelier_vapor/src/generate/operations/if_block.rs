@@ -22,7 +22,7 @@ fn generate_if_inner(
     element_template_map: &FxHashMap<usize, usize>,
 ) {
     ctx.use_helper("createIf");
-    emit_insertion_state(ctx, if_node.parent, if_node.anchor);
+    emit_insertion_state(ctx, if_node.parent, if_node.anchor, if_node.logical_index);
 
     let condition = if if_node.condition.is_static {
         ["\"", if_node.condition.content.as_str(), "\""].concat()
@@ -46,7 +46,7 @@ fn generate_if_inner(
     ctx.is_fragment = true;
     ctx.indent();
     if block_requires_parent_insertion_state(&if_node.positive) {
-        emit_insertion_state(ctx, if_node.parent, if_node.anchor);
+        emit_insertion_state(ctx, if_node.parent, if_node.anchor, if_node.logical_index);
     }
     ctx.push_component_scope();
     generate_block(ctx, &if_node.positive, element_template_map);
@@ -59,7 +59,12 @@ fn generate_if_inner(
                 ctx.push_line("}, () => {");
                 ctx.indent();
                 if block_requires_parent_insertion_state(block) {
-                    emit_insertion_state(ctx, if_node.parent, if_node.anchor);
+                    emit_insertion_state(
+                        ctx,
+                        if_node.parent,
+                        if_node.anchor,
+                        if_node.logical_index,
+                    );
                 }
                 ctx.push_component_scope();
                 generate_block(ctx, block, element_template_map);
@@ -76,7 +81,12 @@ fn generate_if_inner(
                 } else {
                     ctx.push_line("}, () => {");
                     ctx.indent();
-                    emit_insertion_state(ctx, nested_if.parent, nested_if.anchor);
+                    emit_insertion_state(
+                        ctx,
+                        nested_if.parent,
+                        nested_if.anchor,
+                        nested_if.logical_index,
+                    );
                     ctx.push_indent();
                     ctx.push("return ");
                     generate_nested_if(ctx, nested_if, element_template_map);
@@ -112,7 +122,7 @@ fn generate_nested_if(
 
     ctx.indent();
     if block_requires_parent_insertion_state(&if_node.positive) {
-        emit_insertion_state(ctx, if_node.parent, if_node.anchor);
+        emit_insertion_state(ctx, if_node.parent, if_node.anchor, if_node.logical_index);
     }
     ctx.push_component_scope();
     generate_block(ctx, &if_node.positive, element_template_map);
@@ -125,7 +135,12 @@ fn generate_nested_if(
                 ctx.push_line("}, () => {");
                 ctx.indent();
                 if block_requires_parent_insertion_state(block) {
-                    emit_insertion_state(ctx, if_node.parent, if_node.anchor);
+                    emit_insertion_state(
+                        ctx,
+                        if_node.parent,
+                        if_node.anchor,
+                        if_node.logical_index,
+                    );
                 }
                 ctx.push_component_scope();
                 generate_block(ctx, block, element_template_map);
@@ -142,7 +157,12 @@ fn generate_nested_if(
                 } else {
                     ctx.push_line("}, () => {");
                     ctx.indent();
-                    emit_insertion_state(ctx, nested_if.parent, nested_if.anchor);
+                    emit_insertion_state(
+                        ctx,
+                        nested_if.parent,
+                        nested_if.anchor,
+                        nested_if.logical_index,
+                    );
                     ctx.push_indent();
                     ctx.push("return ");
                     generate_nested_if(ctx, nested_if, element_template_map);

@@ -75,6 +75,23 @@ fn test_compile_event() {
 }
 
 #[test]
+fn test_compile_nested_delegated_event_registers_root_delegate() {
+    let allocator = Bump::new();
+    let result = compile_vapor(
+        &allocator,
+        r#"<div><button v-if="shown" @click="choose">Choose</button></div>"#,
+        Default::default(),
+    );
+
+    assert!(result.error_messages.is_empty());
+    assert!(
+        result.code.contains("_delegateEvents(\"click\")"),
+        "nested delegated event must be registered at module scope:\n{}",
+        result.code
+    );
+}
+
+#[test]
 fn test_compile_v_if() {
     let allocator = Bump::new();
     let result = compile_vapor(
@@ -346,6 +363,33 @@ fn test_compile_control_flow_uses_parent_specific_insertion_state() {
 
     let code = normalize_code(&result.code);
     insta::assert_snapshot!(code.as_str());
+}
+
+#[test]
+fn test_compile_adjacent_control_flow_uses_distinct_logical_indices() {
+    let allocator = Bump::new();
+    let result = compile_vapor(
+        &allocator,
+        r#"<div><span v-for="item in items">{{ item }}</span><i v-if="shown">yes</i></div>"#,
+        Default::default(),
+    );
+
+    assert!(result.error_messages.is_empty());
+    let insertion_lines: Vec<_> = result
+        .code
+        .lines()
+        .map(str::trim)
+        .filter(|line| line.starts_with("_setInsertionState("))
+        .collect();
+    assert_eq!(
+        insertion_lines,
+        vec![
+            "_setInsertionState(n6, null, 0)",
+            "_setInsertionState(n6, null, 1)",
+        ],
+        "adjacent dynamic blocks must not claim the same hydration slot:\n{}",
+        result.code
+    );
 }
 
 #[test]

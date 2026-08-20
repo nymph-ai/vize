@@ -3,7 +3,7 @@
 use crate::ir::{ForIRNode, IfIRNode, InsertNodeIRNode, NegativeBranch};
 use vize_carton::ensure_sufficient_stack;
 
-use super::component::transform_component;
+use super::component::{ComponentPlacement, transform_component};
 use super::template::{
     generate_element_template, is_static_element, is_template_backed_element,
     transform_template_ref,
@@ -163,6 +163,7 @@ fn transform_dynamic_children_with_ids<'a>(
     let mut prev_template_backed_child: Option<(usize, usize)> = None;
     let mut child_id_index = 0usize;
     let mut rendered_index = 0usize;
+    let mut logical_index = 0usize;
     let mut in_text_run = false;
     transform_dynamic_children_in_slice(
         ctx,
@@ -172,6 +173,7 @@ fn transform_dynamic_children_with_ids<'a>(
         child_ids,
         &mut child_id_index,
         &mut rendered_index,
+        &mut logical_index,
         &mut in_text_run,
         &mut prev_template_backed_child,
     );
@@ -187,18 +189,25 @@ fn transform_dynamic_children_in_slice<'a>(
     child_ids: &[usize],
     child_id_index: &mut usize,
     rendered_index: &mut usize,
+    logical_index: &mut usize,
     in_text_run: &mut bool,
     prev_template_backed_child: &mut Option<(usize, usize)>,
 ) {
     for child in children {
         let TemplateChildNode::Element(child_el) = child else {
-            if matches!(
-                child,
-                TemplateChildNode::Text(_) | TemplateChildNode::Interpolation(_)
-            ) && !*in_text_run
-            {
-                *rendered_index += 1;
-                *in_text_run = true;
+            match child {
+                TemplateChildNode::Text(_) | TemplateChildNode::Interpolation(_) => {
+                    if !*in_text_run {
+                        *rendered_index += 1;
+                        *logical_index += 1;
+                        *in_text_run = true;
+                    }
+                }
+                TemplateChildNode::If(_) | TemplateChildNode::For(_) => {
+                    *logical_index += 1;
+                    *in_text_run = false;
+                }
+                _ => {}
             }
             continue;
         };
@@ -213,6 +222,7 @@ fn transform_dynamic_children_in_slice<'a>(
                     child_ids,
                     child_id_index,
                     rendered_index,
+                    logical_index,
                     in_text_run,
                     prev_template_backed_child,
                 );
@@ -254,18 +264,16 @@ fn transform_dynamic_children_in_slice<'a>(
                     ctx,
                     child_el,
                     block,
-                    Some(child_id),
-                    Some(parent_id),
-                    None,
-                    false,
+                    ComponentPlacement::child(child_id, parent_id, *logical_index),
                 );
             }
         }
 
         if is_template_backed_element(child_el) {
             *rendered_index += 1;
-            *in_text_run = false;
         }
+        *logical_index += 1;
+        *in_text_run = false;
     }
 }
 
@@ -369,16 +377,36 @@ fn transform_control_flow_children_into_parent<'a>(
     children: &[TemplateChildNode<'a>],
     parent_id: usize,
     block: &mut BlockIRNode<'a>,
+    logical_index: &mut usize,
+    in_text_run: &mut bool,
 ) {
     for (index, child) in children.iter().enumerate() {
         match child {
             TemplateChildNode::If(if_node) => {
                 let anchor = anchor_for_control_flow(ctx, children, index, parent_id, block);
-                transform_if_node_into_parent_with_anchor(ctx, if_node, block, parent_id, anchor);
+                transform_if_node_into_parent_with_anchor(
+                    ctx,
+                    if_node,
+                    block,
+                    parent_id,
+                    anchor,
+                    Some(*logical_index),
+                );
+                *logical_index += 1;
+                *in_text_run = false;
             }
             TemplateChildNode::For(for_node) => {
                 let anchor = anchor_for_control_flow(ctx, children, index, parent_id, block);
-                transform_for_node_into_parent_with_anchor(ctx, for_node, block, parent_id, anchor);
+                transform_for_node_into_parent_with_anchor(
+                    ctx,
+                    for_node,
+                    block,
+                    parent_id,
+                    anchor,
+                    Some(*logical_index),
+                );
+                *logical_index += 1;
+                *in_text_run = false;
             }
             TemplateChildNode::Element(template) if template.tag_type == ElementType::Template => {
                 ensure_sufficient_stack(|| {
@@ -387,8 +415,20 @@ fn transform_control_flow_children_into_parent<'a>(
                         &template.children,
                         parent_id,
                         block,
+                        logical_index,
+                        in_text_run,
                     );
                 });
+            }
+            TemplateChildNode::Element(_) => {
+                *logical_index += 1;
+                *in_text_run = false;
+            }
+            TemplateChildNode::Text(_) | TemplateChildNode::Interpolation(_) => {
+                if !*in_text_run {
+                    *logical_index += 1;
+                    *in_text_run = true;
+                }
             }
             _ => {}
         }
@@ -401,7 +441,16 @@ fn transform_existing_element_control_flow_children<'a>(
     element_id: usize,
     block: &mut BlockIRNode<'a>,
 ) {
-    transform_control_flow_children_into_parent(ctx, &el.children, element_id, block);
+    let mut logical_index = 0;
+    let mut in_text_run = false;
+    transform_control_flow_children_into_parent(
+        ctx,
+        &el.children,
+        element_id,
+        block,
+        &mut logical_index,
+        &mut in_text_run,
+    );
 }
 
 fn transform_deferred_parent_control_flow_children<'a>(
@@ -409,18 +458,56 @@ fn transform_deferred_parent_control_flow_children<'a>(
     el: &ElementNode<'a>,
     block: &mut BlockIRNode<'a>,
 ) {
-    for child in el.children.iter() {
+    let mut logical_index = 0;
+    let mut in_text_run = false;
+    transform_deferred_parent_control_flow_slice(
+        ctx,
+        &el.children,
+        block,
+        &mut logical_index,
+        &mut in_text_run,
+    );
+}
+
+fn transform_deferred_parent_control_flow_slice<'a>(
+    ctx: &mut TransformContext<'a>,
+    children: &[TemplateChildNode<'a>],
+    block: &mut BlockIRNode<'a>,
+    logical_index: &mut usize,
+    in_text_run: &mut bool,
+) {
+    for child in children {
         match child {
             TemplateChildNode::If(if_node) => {
-                transform_if_node_deferred_parent(ctx, if_node, block);
+                transform_if_node_deferred_parent(ctx, if_node, block, Some(*logical_index));
+                *logical_index += 1;
+                *in_text_run = false;
             }
             TemplateChildNode::For(for_node) => {
-                transform_for_node_deferred_parent(ctx, for_node, block);
+                transform_for_node_deferred_parent(ctx, for_node, block, Some(*logical_index));
+                *logical_index += 1;
+                *in_text_run = false;
             }
             TemplateChildNode::Element(template) if template.tag_type == ElementType::Template => {
                 ensure_sufficient_stack(|| {
-                    transform_deferred_parent_control_flow_children(ctx, template, block);
+                    transform_deferred_parent_control_flow_slice(
+                        ctx,
+                        &template.children,
+                        block,
+                        logical_index,
+                        in_text_run,
+                    );
                 });
+            }
+            TemplateChildNode::Element(_) => {
+                *logical_index += 1;
+                *in_text_run = false;
+            }
+            TemplateChildNode::Text(_) | TemplateChildNode::Interpolation(_) => {
+                if !*in_text_run {
+                    *logical_index += 1;
+                    *in_text_run = true;
+                }
             }
             _ => {}
         }
