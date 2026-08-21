@@ -1,6 +1,5 @@
 ---
 source: crates/vize_atelier_vapor/src/tests_template_children.rs
-assertion_line: 49
 expression: vapor_output(V_MATCH)
 ---
 errors=[]
@@ -15,7 +14,7 @@ export function render(_ctx) {
   const n0 = _next(_child(n1), 1)
   const n2 = _child(n1)
   const x0 = _txt(n0)
-  _setInsertionState(n1, n2)
+  _setInsertionState(n1, n2, 0)
   const n3 = _createIf(() => ((_ctx.status) === ('ready')), () => {
     const n5 = t0()
     return n5

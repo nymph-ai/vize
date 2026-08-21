@@ -26,16 +26,17 @@ pub(crate) fn compile_template_block_vapor(
     let compiler_options = options.compiler_options.as_ref();
 
     // Build Vapor compiler options
+    let inline = bindings.is_some_and(|metadata| metadata.is_script_setup);
     let vapor_opts = VaporCompilerOptions {
         prefix_identifiers: false,
         ssr: false,
         binding_metadata: bindings.cloned(),
+        inline,
         custom_renderer: options.custom_renderer,
         experimental_in_tag_comments: compiler_options
             .is_some_and(|opts| opts.experimental_in_tag_comments),
         experimental_patterned_template: compiler_options
             .is_some_and(|opts| opts.experimental_patterned_template),
-        ..Default::default()
     };
 
     // Compile template with Vapor
@@ -196,7 +197,11 @@ pub(super) fn transform_vapor_template_output(
         });
     }
 
-    output.push_str("function render(_ctx, $props, $emit, $attrs, $slots) {\n");
+    if bindings.is_some_and(|metadata| metadata.is_script_setup) {
+        output.push_str("function render(_ctx, $props, $emit, $attrs, $slots, $setup) {\n");
+    } else {
+        output.push_str("function render(_ctx, $props, $emit, $attrs, $slots) {\n");
+    }
 
     let mut brace_state = StringTrackState::default();
     let mut brace_depth = count_braces_with_state(lines[index], &mut brace_state);

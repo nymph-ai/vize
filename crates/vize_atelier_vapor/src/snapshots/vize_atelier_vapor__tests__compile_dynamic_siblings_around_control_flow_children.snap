@@ -1,6 +1,5 @@
 ---
 source: crates/vize_atelier_vapor/src/tests.rs
-assertion_line: 735
 expression: code.as_str()
 ---
 import { child as _child, next as _next, setClass as _setClass, createInvoker as _createInvoker, delegateEvents as _delegateEvents, setInsertionState as _setInsertionState, renderEffect as _renderEffect, createIf as _createIf, template as _template } from 'vue';
@@ -15,7 +14,7 @@ const n3 = _next(n2, 1)
 const n4 = _next(_child(n0), 1)
 n2.$evtclick = _createInvoker(() => (_ctx.activeTab = 'code'))
 n3.$evtclick = _createInvoker(() => (_ctx.activeTab = 'helpers'))
-_setInsertionState(n0, n4)
+_setInsertionState(n0, n4, 1)
 const n5 = _createIf(() => (_ctx.inputMode === 'sfc'), () => {
 const n7 = t0()
 n7.$evtclick = _createInvoker(() => (_ctx.activeTab = 'bindings'))

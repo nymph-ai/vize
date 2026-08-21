@@ -168,7 +168,7 @@ pub(crate) fn compile_script_setup_inline_with_context(
         if is_vapor {
             if needs_vapor_setup_context {
                 output.extend_from_slice(
-                    b"import { withAsyncContext as _withAsyncContext, defineVaporComponent as _defineVaporComponent, getCurrentInstance as _getCurrentInstance, proxyRefs as _proxyRefs } from 'vue'\n",
+                    b"import { withAsyncContext as _withAsyncContext, defineVaporComponent as _defineVaporComponent, proxyRefs as _proxyRefs } from 'vue'\n",
                 );
             } else {
                 output.extend_from_slice(

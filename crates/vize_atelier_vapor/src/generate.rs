@@ -34,6 +34,8 @@ pub struct VaporGenerateOptions {
     /// JSX closure mode: the render code runs inside the authoring component
     /// function, so free identifiers stay bare instead of `_ctx.`-prefixed.
     pub jsx_closure: bool,
+    /// Inline SFC mode exposes raw setup bindings through `$setup`.
+    pub inline: bool,
 }
 
 /// Generate Vapor code from IR
@@ -56,6 +58,7 @@ pub fn generate_vapor_with_options(
         binding_metadata,
     );
     ctx.jsx_closure = options.jsx_closure;
+    ctx.inline = options.inline;
 
     // Template helper is always used if we have templates
     if !ir.templates.is_empty() {
@@ -121,7 +124,11 @@ pub fn generate_vapor_with_options(
     collect_delegate_events(&mut ctx, &ir.block);
 
     // Generate component function body first to collect used helpers
-    ctx.push_line("export function render(_ctx) {");
+    if ctx.inline {
+        ctx.push_line("export function render(_ctx, $setup) {");
+    } else {
+        ctx.push_line("export function render(_ctx) {");
+    }
     ctx.indent();
 
     if block_has_template_refs(&ir.block) {

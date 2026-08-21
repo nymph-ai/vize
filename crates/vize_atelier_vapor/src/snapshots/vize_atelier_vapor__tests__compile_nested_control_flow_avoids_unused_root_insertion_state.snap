@@ -1,6 +1,5 @@
 ---
 source: crates/vize_atelier_vapor/src/tests.rs
-assertion_line: 401
 expression: code.as_str()
 ---
 import { setInsertionState as _setInsertionState, createIf as _createIf, template as _template } from 'vue';
@@ -10,15 +9,15 @@ const t2 = _template("<section></section>", true)
 const t3 = _template("<div></div>", true)
 export function render(_ctx) {
 const n9 = t3()
-_setInsertionState(n9)
+_setInsertionState(n9, null, 0)
 const n0 = _createIf(() => (_ctx.ok), () => {
 const n8 = t2()
-_setInsertionState(n8)
+_setInsertionState(n8, null, 0)
 const n2 = _createIf(() => (_ctx.inner), () => {
 const n4 = t0()
 return n4
 })
-_setInsertionState(n8)
+_setInsertionState(n8, null, 1)
 const n5 = _createIf(() => (_ctx.more), () => {
 const n7 = t1()
 return n7

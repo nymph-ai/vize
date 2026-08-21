@@ -2,6 +2,7 @@ use crate::ir::{
     ChildRefIRNode, GetTextChildIRNode, InsertNodeIRNode, NextRefIRNode, PrependNodeIRNode,
     SetTemplateRefIRNode,
 };
+use vize_atelier_core::options::BindingType;
 use vize_carton::{String, cstr};
 
 use super::super::context::GenerateContext;
@@ -13,7 +14,16 @@ pub(super) fn generate_set_template_ref(
 ) {
     let element = cstr!("n{}", set_ref.element);
 
-    let value = if set_ref.value.is_static {
+    let value = if set_ref.value.is_static
+        && ctx.inline
+        && ctx.binding_metadata.is_some_and(|metadata| {
+            matches!(
+                metadata.bindings.get(set_ref.value.content.as_str()),
+                Some(BindingType::SetupLet | BindingType::SetupRef | BindingType::SetupMaybeRef)
+            )
+        }) {
+        cstr!("$setup.{}", set_ref.value.content)
+    } else if set_ref.value.is_static {
         cstr!("\"{}\"", set_ref.value.content)
     } else {
         ctx.resolve_expression(set_ref.value.content.as_str())

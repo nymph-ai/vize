@@ -7,10 +7,52 @@ use vize_carton::{String, cstr};
 /// Collect delegate events from block
 pub(crate) fn collect_delegate_events(ctx: &mut GenerateContext, block: &BlockIRNode<'_>) {
     for op in block.operation.iter() {
-        if let OperationNode::SetEvent(set_event) = op
-            && set_event.delegate
-        {
+        collect_operation_delegate_events(ctx, op);
+    }
+    for effect in block.effect.iter() {
+        for op in effect.operations.iter() {
+            collect_operation_delegate_events(ctx, op);
+        }
+    }
+}
+
+fn collect_operation_delegate_events(ctx: &mut GenerateContext, op: &OperationNode<'_>) {
+    match op {
+        OperationNode::SetEvent(set_event) if set_event.delegate => {
             ctx.add_delegate_event(&set_event.key.content);
+        }
+        OperationNode::If(if_node) => {
+            collect_delegate_events(ctx, &if_node.positive);
+            if let Some(negative) = &if_node.negative {
+                collect_negative_branch_delegate_events(ctx, negative);
+            }
+        }
+        OperationNode::For(for_node) => collect_delegate_events(ctx, &for_node.render),
+        OperationNode::CreateComponent(component) => {
+            for slot in component.slots.iter() {
+                collect_delegate_events(ctx, &slot.block);
+            }
+        }
+        OperationNode::SlotOutlet(slot) => {
+            if let Some(fallback) = &slot.fallback {
+                collect_delegate_events(ctx, fallback);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn collect_negative_branch_delegate_events(
+    ctx: &mut GenerateContext,
+    branch: &crate::ir::NegativeBranch<'_>,
+) {
+    match branch {
+        crate::ir::NegativeBranch::Block(block) => collect_delegate_events(ctx, block),
+        crate::ir::NegativeBranch::If(if_node) => {
+            collect_delegate_events(ctx, &if_node.positive);
+            if let Some(negative) = &if_node.negative {
+                collect_negative_branch_delegate_events(ctx, negative);
+            }
         }
     }
 }

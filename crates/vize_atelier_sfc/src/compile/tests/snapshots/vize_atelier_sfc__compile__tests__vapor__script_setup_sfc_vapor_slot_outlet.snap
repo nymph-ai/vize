@@ -2,12 +2,12 @@
 source: crates/vize_atelier_sfc/src/compile/tests/vapor.rs
 expression: result.code.as_str()
 ---
-import { defineVaporComponent as _defineVaporComponent, getCurrentInstance as _getCurrentInstance, proxyRefs as _proxyRefs } from 'vue'
+import { defineVaporComponent as _defineVaporComponent, proxyRefs as _proxyRefs } from 'vue'
 import { createSlot as _createSlot, insert as _insert, template as _template } from 'vue';
 
 const t0 = _template("<div></div>", true)
 
-function render(_ctx, $props, $emit, $attrs, $slots) {
+function render(_ctx, $props, $emit, $attrs, $slots, $setup) {
   const n1 = t0()
   const n0 = _createSlot()
   _insert(n0, n1)
@@ -23,10 +23,8 @@ export default /*@__PURE__*/_defineVaporComponent({
 
 const __returned__ = {  }
 Object.defineProperty(__returned__, '__isScriptSetup', { enumerable: false, value: true })
-const __instance = _getCurrentInstance()
 const __ctx = _proxyRefs(__returned__)
-if (__instance) __instance.setupState = __ctx
-return __vaporRender(__ctx, __props, __emit, __attrs, __slots)
+return __vaporRender(__ctx, __props, __emit, __attrs, __slots, __returned__)
 }
 
 })

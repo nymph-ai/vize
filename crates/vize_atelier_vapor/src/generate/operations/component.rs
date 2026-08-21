@@ -111,7 +111,12 @@ pub(super) fn generate_create_component(
     let props = generate_component_props_str(ctx, component);
     let has_slots = !component.slots.is_empty();
 
-    emit_insertion_state(ctx, component.parent, component.anchor);
+    emit_insertion_state(
+        ctx,
+        component.parent,
+        component.anchor,
+        component.logical_index,
+    );
 
     // Check if this is a simple inner component (pre-resolved, no props, no slots)
     // In that case, emit simplified call: _createComponentWithFallback(_component_Foo)

@@ -81,7 +81,7 @@ pub(super) fn emit_preamble(
     if is_vapor && !is_async {
         if needs_vapor_setup_context {
             output.extend_from_slice(
-                b"import { defineVaporComponent as _defineVaporComponent, getCurrentInstance as _getCurrentInstance, proxyRefs as _proxyRefs } from 'vue'\n",
+                b"import { defineVaporComponent as _defineVaporComponent, proxyRefs as _proxyRefs } from 'vue'\n",
             );
         } else {
             output.extend_from_slice(

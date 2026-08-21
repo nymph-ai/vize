@@ -52,6 +52,35 @@ const doubled = computed(() => count.value * 2)
     insta::assert_snapshot!(result.code.as_str());
 }
 
+#[test]
+fn test_script_setup_vapor_static_ref_receives_raw_setup_binding() {
+    let source = r#"<script setup vapor>
+import { ref } from 'vue'
+const host = ref(null)
+</script>
+
+<template><main ref="host"></main></template>"#;
+
+    let descriptor = parse_sfc(source, SfcParseOptions::default()).expect("Failed to parse SFC");
+    let result = compile_sfc(
+        &descriptor,
+        SfcCompileOptions {
+            vapor: true,
+            ..Default::default()
+        },
+    )
+    .expect("Failed to compile SFC");
+
+    assert!(result.code.contains("$attrs, $slots, $setup)"));
+    assert!(result.code.contains("_setRef(n0, $setup.host)"));
+    assert!(
+        result
+            .code
+            .contains("__vaporRender(__ctx, __props, __emit, __attrs, __slots, __returned__)")
+    );
+    assert!(!result.code.contains("_getCurrentInstance"));
+}
+
 // Regression test for #3073: a Vapor SFC `<slot>` must lower to the Vapor
 // runtime's `createSlot`, never the vdom `renderSlot` helper, and nested slot
 // blocks must insert with the runtime's `insert(block, parent)` argument order.

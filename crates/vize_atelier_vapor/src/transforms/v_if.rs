@@ -27,6 +27,7 @@ pub fn transform_v_if<'a>(
         once: false,
         parent: None,
         anchor: None,
+        logical_index: None,
     };
 
     OperationNode::If(Box::new_in(if_node, allocator))
@@ -77,6 +78,7 @@ pub fn transform_if_branches<'a>(
         once: false,
         parent: None,
         anchor: None,
+        logical_index: None,
     };
 
     Some(OperationNode::If(Box::new_in(if_node, allocator)))
@@ -122,6 +124,7 @@ fn transform_remaining_branches<'a>(
             once: false,
             parent: None,
             anchor: None,
+            logical_index: None,
         };
 
         NegativeBranch::If(Box::new_in(nested_if, allocator))

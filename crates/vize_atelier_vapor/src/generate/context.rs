@@ -74,6 +74,8 @@ pub(crate) struct GenerateContext<'a> {
     /// closure (JSX/TSX authoring), so free identifiers resolve to enclosing
     /// scope variables and must stay bare instead of being `_ctx.`-prefixed.
     pub(crate) jsx_closure: bool,
+    /// Inline SFC mode can address raw setup refs through `$setup`.
+    pub(crate) inline: bool,
 }
 
 impl<'a> GenerateContext<'a> {
@@ -100,6 +102,7 @@ impl<'a> GenerateContext<'a> {
             standalone_text_elements,
             binding_metadata,
             jsx_closure: false,
+            inline: false,
         }
     }
 
